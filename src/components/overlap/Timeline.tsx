@@ -124,8 +124,8 @@ export default function Timeline({ cities, day, sourceTZ, durationMins, suggesti
               </div>
 
               {/* Timeline row */}
-              <div className="relative bg-gray-100 dark:bg-gray-800 rounded-xl p-1">
-                <div className={`grid ${durationMins >= 60 ? 'grid-cols-24' : 'grid-cols-48'} gap-1 h-12`}>
+              <div className="relative bg-gray-100 dark:bg-gray-800 rounded-xl p-2">
+                <div className={`grid ${durationMins >= 60 ? 'grid-cols-24' : 'grid-cols-48'} gap-1 h-16`}>
                   {Array.from({ length: durationMins >= 60 ? 24 : 48 }).map((_, idx) => {
                     const startMin = idx * blockMinutes;
                     const blockStart = sourceDay.set({ hour: Math.floor(startMin / 60), minute: startMin % 60 });
@@ -160,9 +160,18 @@ export default function Timeline({ cities, day, sourceTZ, durationMins, suggesti
                     return (
                       <div
                         key={idx}
-                        className={`${bgClass} ${hoverClass} rounded-lg h-full cursor-pointer transition-all duration-200 shadow-sm hover:shadow-md transform hover:scale-105 relative group`}
+                        className={`${bgClass} ${hoverClass} rounded-md h-full w-full cursor-pointer transition-all duration-200 shadow-sm hover:shadow-md relative group min-h-[3rem] border border-white/20`}
                         title={title}
+                        style={{ 
+                          backgroundColor: isComfort ? '#22c55e' : isBorder ? '#f59e0b' : '#a855f7',
+                          minHeight: '48px'
+                        }}
                       >
+                        {/* Visual indicator for debugging */}
+                        <div className="absolute inset-0 flex items-center justify-center text-white text-xs font-bold opacity-75">
+                          {isComfort ? '✓' : isBorder ? '~' : '×'}
+                        </div>
+                        
                         {/* Tooltip */}
                         <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-20">
                           {localTime} • {label}
