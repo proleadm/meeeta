@@ -45,14 +45,12 @@ export function CityList() {
     );
   }
   
-  // Render sorted cities as horizontal row (desktop) / grid (small)
+  // Render sorted cities as responsive grid
   return (
-    <div className="grid grid-cols-1 gap-3 md:grid-cols-[1fr]">
-      <div className="md:flex md:gap-4 md:overflow-x-auto md:snap-x md:snap-mandatory md:pb-3 md:pr-2 md:scroll-smooth">
-        {sortedCities.map((city) => (
-          <TimeCard key={city.id} city={city} />
-        ))}
-      </div>
+    <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+      {sortedCities.map((city) => (
+        <TimeCard key={city.id} city={city} />
+      ))}
     </div>
   );
 }

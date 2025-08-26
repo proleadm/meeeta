@@ -17,6 +17,8 @@ export default function ClocksPage() {
         </div>
       </div>
 
+      <div className="border-b" />
+
       <HomeTimeBar />
 
       <CityList />
