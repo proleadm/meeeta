@@ -34,7 +34,10 @@ export function AddCityDialog() {
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <Button variant="outline" size="sm" className="gap-2">
+        <Button 
+          size="sm" 
+          className="gap-2 bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg hover:shadow-xl transition-all duration-200 hover:-translate-y-0.5"
+        >
           <Plus className="h-4 w-4" />
           Add City
         </Button>

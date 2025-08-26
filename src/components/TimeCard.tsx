@@ -40,51 +40,87 @@ export default function TimeCard({ city }: TimeCardProps) {
   const tod = getTimeOfDayLabel(hour);
 
   return (
-    <Card className="p-5 rounded-xl shadow-sm border hover:border-primary/30 hover:shadow-md transition-colors">
+    <Card className="group relative p-6 rounded-2xl bg-gradient-to-br from-card via-card to-card/50 border-0 shadow-lg shadow-black/5 hover:shadow-xl hover:shadow-black/10 transition-all duration-300 hover:-translate-y-1 overflow-hidden">
+      {/* Subtle accent border based on time of day */}
+      <div className={cn(
+        "absolute top-0 left-0 right-0 h-1 rounded-t-2xl",
+        tod === "Day" && "bg-gradient-to-r from-green-400 to-emerald-500",
+        tod === "Dawn/Dusk" && "bg-gradient-to-r from-orange-400 to-amber-500", 
+        tod === "Night" && "bg-gradient-to-r from-blue-400 to-indigo-500"
+      )} />
+      
       <CardContent className="p-0">
-        <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0">
-            <Badge className={cn('mb-1', timeOfDayClasses(tod))}>{tod}</Badge>
-            <div className="flex items-center gap-2">
-              <h3 className="font-semibold text-base truncate">{city.name}</h3>
-              {city.isPinned && <Pin className="h-4 w-4 text-primary fill-primary" />}
+        <div className="flex items-start justify-between gap-4">
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-2 mb-3">
+              <Badge className={cn(
+                'px-3 py-1 text-xs font-medium border-0 shadow-sm',
+                timeOfDayClasses(tod)
+              )}>
+                {tod}
+              </Badge>
+              {city.isPinned && (
+                <div className="flex items-center justify-center w-6 h-6 rounded-full bg-primary/10">
+                  <Pin className="h-3 w-3 text-primary fill-primary" />
+                </div>
+              )}
             </div>
-            <p className="text-sm text-muted-foreground truncate">
-              {city.country} • {offsetStr}
-            </p>
-            <p className="text-xs text-muted-foreground mt-1 truncate">
-              Local time in {city.name}
-            </p>
+            
+            <div className="space-y-2">
+              <h3 className="font-bold text-xl truncate text-foreground group-hover:text-primary transition-colors">
+                {city.name}
+              </h3>
+              <p className="text-sm text-muted-foreground truncate font-medium">
+                {city.country} • {offsetStr}
+              </p>
+              <p className="text-xs text-muted-foreground/80 truncate">
+                Local time in {city.name}
+              </p>
+            </div>
           </div>
-          <div className="text-right">
-            <div className="text-3xl font-semibold tracking-tight font-mono tabular-nums">{timeStr}</div>
-            <div className="text-sm text-muted-foreground">{dateStr}</div>
+          
+          <div className="text-right space-y-1">
+            <div className="text-4xl md:text-5xl font-bold tracking-tight font-mono tabular-nums text-foreground">
+              {timeStr}
+            </div>
+            <div className="text-sm font-medium text-muted-foreground">
+              {dateStr}
+            </div>
           </div>
         </div>
 
-        <div className="mt-4 flex items-center justify-between">
-          <div className="flex gap-2">
-            <Button
-              variant="ghost"
-              size="sm"
-              aria-label={`Pin ${city.name}`}
-              onClick={() => togglePin(city.id)}
-              className={cn(city.isPinned && 'text-primary')}
-            >
-              <Pin className={cn('h-4 w-4', city.isPinned && 'fill-current')} />
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              aria-label={`Remove ${city.name}`}
-              onClick={() => removeCity(city.id)}
-              className="text-destructive hover:text-destructive"
-            >
-              <X className="h-4 w-4" />
-            </Button>
-          </div>
-          <Button variant="ghost" size="sm" aria-label={`More actions for ${city.name}`}>
+        <div className="mt-6 flex items-center justify-end gap-1">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => togglePin(city.id)}
+            className={cn(
+              "h-8 w-8 p-0 rounded-full hover:bg-primary/10 transition-all duration-200",
+              city.isPinned ? "text-primary hover:text-primary" : "text-muted-foreground hover:text-primary"
+            )}
+            aria-label={`Toggle pin for ${city.name}`}
+          >
+            <Pin className="h-4 w-4" />
+            <span className="sr-only">Pin</span>
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => removeCity(city.id)}
+            className="h-8 w-8 p-0 rounded-full text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-all duration-200"
+            aria-label={`Remove ${city.name}`}
+          >
+            <X className="h-4 w-4" />
+            <span className="sr-only">Remove</span>
+          </Button>
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className="h-8 w-8 p-0 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all duration-200"
+            aria-label="More options"
+          >
             <MoreHorizontal className="h-4 w-4" />
+            <span className="sr-only">More</span>
           </Button>
         </div>
       </CardContent>

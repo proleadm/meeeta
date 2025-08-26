@@ -41,7 +41,11 @@ export function PrefsMenu() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="outline" size="sm" className="gap-2">
+        <Button 
+          variant="outline" 
+          size="sm" 
+          className="gap-2 bg-card/50 border-border/50 hover:bg-card hover:border-border shadow-sm hover:shadow-md transition-all duration-200 hover:-translate-y-0.5"
+        >
           <Settings className="h-4 w-4" />
           Settings
         </Button>
