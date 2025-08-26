@@ -1,0 +1,238 @@
+# WorldClocked MVP - Product Requirements Document
+
+## Project Overview
+WorldClocked is a modern, responsive world clock application built as a progressive web app. The MVP will be delivered in sequential stages to avoid context overload and ensure quality at each milestone.
+
+## Tech Stack
+- **Frontend**: Next.js 14 (App Router) + TypeScript + Tailwind CSS + shadcn/ui
+- **State Management**: Zustand + localStorage (SSR-safe hydration)
+- **Time Utilities**: Luxon + Intl API
+- **Testing**: Vitest (unit) + Playwright (e2e)
+- **Deployment**: Vercel
+
+## Development Stages
+
+### Stage A: Clocks Tab [IN SCOPE NOW] ✅
+**Priority**: P0 (Critical)
+**Status**: IN DEVELOPMENT
+
+#### Features
+1. **World Clock Display**
+   - Display multiple cities with current time
+   - Support for 12/24 hour format toggle
+   - Real-time updates every second
+   - Timezone-aware formatting with DST handling
+
+2. **City Management**
+   - Add cities via search dialog
+   - Remove cities from list
+   - Pin/unpin cities (pinned cities appear first)
+   - Drag-and-drop reordering (future enhancement)
+
+3. **User Preferences**
+   - Home timezone selection
+   - 12/24 hour format preference
+   - Persistent settings via localStorage
+
+4. **Responsive Design**
+   - Mobile-first approach
+   - Dark theme support (default)
+   - Clean, modern UI with shadcn/ui components
+
+#### Success Criteria
+- [ ] User can add 3+ cities and see live times
+- [ ] Pin functionality works and persists after reload
+- [ ] 12/24h toggle works and persists
+- [ ] Home timezone change updates all displayed times
+- [ ] DST transitions handled correctly
+- [ ] All acceptance tests pass
+
+#### Acceptance Tests
+1. **Add/Remove Cities**: Add Tokyo, London, New York → verify times display → remove Tokyo
+2. **Pin Persistence**: Pin London → reload page → verify London appears first
+3. **Format Toggle**: Switch between 12/24h → verify all times update → persist after reload
+4. **Home Timezone**: Change home timezone → verify all relative times update
+5. **DST Handling**: Verify Los Angeles time displays correctly around DST boundary
+6. **Smoke Test**: Playwright test covers basic user flow
+
+### Stage B: Convert Tab [OUT OF SCOPE]
+**Priority**: P1 (High)
+**Status**: PLANNED
+
+#### Features
+- Time zone converter
+- "What time is it when it's X in Y?" functionality
+- Meeting time finder across timezones
+- Copy/share converted times
+
+### Stage C: Overlap Tab [OUT OF SCOPE]
+**Priority**: P1 (High)
+**Status**: PLANNED
+
+#### Features
+- Business hours overlap visualization
+- Multi-timezone working hours display
+- Best meeting time suggestions
+- Visual timeline with overlap highlighting
+
+### Stage D: Planner Tab [OUT OF SCOPE]
+**Priority**: P2 (Medium)
+**Status**: PLANNED
+
+#### Features
+- Schedule meetings across timezones
+- Calendar integration (read-only)
+- Meeting time proposals
+- Timezone-aware event planning
+
+### Stage E: Authentication [OUT OF SCOPE]
+**Priority**: P2 (Medium)
+**Status**: PLANNED
+
+#### Features
+- User accounts (email/password)
+- Social login (Google, GitHub)
+- Profile management
+- Settings sync across devices
+
+### Stage F: Data Persistence [OUT OF SCOPE]
+**Priority**: P2 (Medium)
+**Status**: PLANNED
+
+#### Features
+- Cloud sync for user preferences
+- Backup/restore settings
+- Cross-device synchronization
+- Offline-first architecture
+
+### Stage G: Premium Features [OUT OF SCOPE]
+**Priority**: P3 (Low)
+**Status**: PLANNED
+
+#### Features
+- Stripe integration for subscriptions
+- Premium timezone data
+- Advanced analytics
+- Custom themes and layouts
+
+## Technical Implementation (Stage A Only)
+
+### File Structure
+```
+src/
+├── lib/
+│   ├── time.ts              # Luxon utilities, timezone handling
+│   └── utils.ts             # shadcn/ui utilities
+├── state/
+│   └── usePrefs.ts          # Zustand store with localStorage
+├── components/
+│   ├── ui/                  # shadcn/ui components
+│   ├── AddCityDialog.tsx    # City search and add dialog
+│   ├── CityItem.tsx         # Individual city time display
+│   ├── CityList.tsx         # List of all cities
+│   └── PrefsMenu.tsx        # Settings dropdown
+└── app/
+    ├── (tabs)/
+    │   └── clocks/
+    │       └── page.tsx     # Main clocks interface
+    ├── layout.tsx           # Root layout with tabs
+    └── globals.css          # Tailwind + theme variables
+```
+
+### Key Components
+
+#### src/lib/time.ts
+- `nowInTZ(timezone: string)`: Current time in specified timezone
+- `formatTime(date: DateTime, format: '12h' | '24h')`: Format time display
+- `listCommonCities()`: Return popular cities with timezones
+- `searchCities(query: string)`: Search cities by name
+- `normalizeTZ(input: string)`: Convert city names to IANA timezones
+
+#### src/state/usePrefs.ts
+- Zustand store with localStorage persistence
+- SSR-safe hydration handling
+- State: `{ cities: City[], homeTimezone: string, format: '12h' | '24h' }`
+- Actions: `addCity`, `removeCity`, `togglePin`, `setFormat`, `setHomeTimezone`
+
+#### Components
+- **AddCityDialog**: Modal with city search, uses shadcn Dialog + Select
+- **CityItem**: Displays city name, time, pin status, remove button
+- **CityList**: Renders all cities, handles reordering
+- **PrefsMenu**: Dropdown for format toggle, home timezone selection
+
+### Testing Strategy
+
+#### Unit Tests (Vitest)
+- `formatTime()` with various timezones and DST scenarios
+- Zustand store actions and persistence
+- Time utility functions edge cases
+
+#### E2E Tests (Playwright)
+- Add city → verify time display → remove city
+- Toggle 12/24h format → verify persistence
+- Pin city → reload → verify order
+- Home timezone change → verify time updates
+
+### Performance Requirements
+- Initial page load: < 2s
+- Time updates: 60fps smooth animations
+- City search: < 100ms response time
+- localStorage operations: < 50ms
+
+### Browser Support
+- Chrome 90+
+- Firefox 88+
+- Safari 14+
+- Edge 90+
+
+## Deployment Strategy
+
+### Stage A Deployment
+1. **Local Development**
+   - `npm run dev` for development server
+   - `npm run test` for unit tests
+   - `npm run test:e2e` for Playwright tests
+
+2. **Vercel Deployment**
+   - Automatic deployments from main branch
+   - Preview deployments for PRs
+   - Environment variables for any future API keys
+
+3. **Quality Gates**
+   - All tests must pass
+   - ESLint/TypeScript checks
+   - Lighthouse score > 90
+   - Manual acceptance test verification
+
+## Risk Mitigation
+
+### Technical Risks
+- **DST Handling**: Use Luxon's robust timezone database
+- **SSR Hydration**: Implement proper client-side hydration for localStorage
+- **Performance**: Optimize re-renders with React.memo and Zustand selectors
+
+### Scope Risks
+- **Feature Creep**: Strict adherence to Stage A only
+- **Over-Engineering**: Keep implementations simple and focused
+- **Context Overload**: Small, incremental commits with clear boundaries
+
+## Success Metrics (Stage A)
+- [ ] All acceptance tests pass
+- [ ] Unit test coverage > 80%
+- [ ] Lighthouse performance score > 90
+- [ ] Zero TypeScript errors
+- [ ] Zero ESLint warnings
+- [ ] Manual testing checklist completed
+- [ ] Git tagged as vA
+
+## Next Steps After Stage A
+1. User feedback collection
+2. Performance monitoring setup
+3. Stage B planning and design
+4. Potential UI/UX improvements based on usage
+
+---
+
+**Document Version**: 1.0  
+**Last Updated**: January 2025  
+**Stage A Target**: Complete within current development session
