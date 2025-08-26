@@ -33,10 +33,7 @@ export default function OverlapForm(props: OverlapFormProps) {
       {/* Cities */}
       <div className="space-y-2">
         <label className="text-sm font-medium">Cities</label>
-        <div className="flex flex-wrap gap-2">
-          {selectedCities.length === 0 && (
-            <span className="text-sm text-muted-foreground">No cities selected</span>
-          )}
+        <div className="flex flex-wrap items-center gap-2 min-h-10">
           {selectedCities.map((c) => (
             <span key={c.id} className="inline-flex items-center gap-2 px-2.5 py-1.5 rounded-full text-xs bg-accent text-accent-foreground">
               {c.name}
@@ -45,19 +42,17 @@ export default function OverlapForm(props: OverlapFormProps) {
               </button>
             </span>
           ))}
-        </div>
-        <div className="flex items-center gap-2">
-          <input
-            value={cityQuery}
-            onChange={(e) => setCityQuery(e.target.value)}
-            placeholder="Add temporary city..."
-            className="w-full h-9 px-3 rounded-md border bg-background"
-            aria-label="Search and add temporary city"
-          />
-          <div className="relative">
+          <div className="relative grow">
+            <input
+              value={cityQuery}
+              onChange={(e) => setCityQuery(e.target.value)}
+              placeholder="Add temporary city..."
+              className="w-full h-9 px-3 rounded-md border bg-background"
+              aria-label="Search and add temporary city"
+            />
             {cityQuery && results.length > 0 && (
-              <div className="absolute z-10 mt-1 w-64 max-h-56 overflow-auto rounded-md border bg-popover shadow">
-                {results.slice(0, 8).map((c) => (
+              <div className="absolute left-0 right-0 z-20 mt-1 max-h-56 overflow-auto rounded-md border bg-popover shadow">
+                {results.slice(0, 10).map((c) => (
                   <button
                     key={c.id}
                     onClick={() => addTempCity(c)}
