@@ -10,9 +10,12 @@ interface SuggestionsProps {
   cities?: { name: string; timezone: string }[];
   durationMins?: number;
   day?: 'today' | 'tomorrow' | Date;
+  onHover?: (s: any | null) => void;
+  onLeave?: () => void;
+  onPick?: (s: any) => void;
 }
 
-export default function Suggestions({ suggestions, sourceTZ, cities = [], durationMins = 30, day = 'today' }: SuggestionsProps) {
+export default function Suggestions({ suggestions, sourceTZ, cities = [], durationMins = 30, day = 'today', onHover, onLeave, onPick }: SuggestionsProps) {
   const sourceDay = typeof day === 'string'
     ? (day === 'today' ? DateTime.now() : DateTime.now().plus({ days: 1 }))
     : DateTime.fromJSDate(day as Date);
@@ -58,7 +61,11 @@ export default function Suggestions({ suggestions, sourceTZ, cities = [], durati
       ) : (
         <div className="grid gap-2">
           {list.map((s: any, idx: number) => (
-            <div key={idx} className="rounded-lg border p-3 text-sm flex items-start justify-between gap-3">
+            <div key={idx} className="rounded-lg border p-3 text-sm flex items-start justify-between gap-3 hover:border-primary/50"
+              onMouseEnter={() => onHover?.(s)}
+              onMouseLeave={() => onLeave?.()}
+              onClick={() => onPick?.(s)}
+            >
               <div>
                 <div className="font-medium">{s.label}</div>
                 <div className="mt-1 space-y-0.5 text-muted-foreground text-xs">
