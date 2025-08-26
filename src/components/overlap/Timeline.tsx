@@ -68,19 +68,19 @@ export default function Timeline({ cities, day, sourceTZ, durationMins, suggesti
       {/* Legend */}
       <div className="flex items-center justify-center gap-8 p-4 bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-800/50 dark:to-gray-700/50 rounded-2xl border border-gray-200/50 dark:border-gray-700/50">
         <div className="flex items-center gap-3">
-          <div className="w-5 h-5 bg-gradient-to-r from-emerald-400 to-emerald-500 rounded-lg shadow-sm"></div>
-          <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">Comfortable</span>
-          <span className="text-xs text-gray-500 dark:text-gray-400">(9AM-5PM)</span>
+          <div className="w-5 h-5 bg-emerald-500 rounded-lg shadow-sm"></div>
+          <span className="text-sm font-semibold text-emerald-700 dark:text-emerald-300">Comfortable</span>
+          <span className="text-xs text-emerald-600 dark:text-emerald-400">(9AM-5PM)</span>
         </div>
         <div className="flex items-center gap-3">
-          <div className="w-5 h-5 bg-gradient-to-r from-amber-400 to-amber-500 rounded-lg shadow-sm"></div>
-          <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">Borderline</span>
-          <span className="text-xs text-gray-500 dark:text-gray-400">(7-9AM, 5-9PM)</span>
+          <div className="w-5 h-5 bg-amber-500 rounded-lg shadow-sm"></div>
+          <span className="text-sm font-semibold text-amber-700 dark:text-amber-300">Borderline</span>
+          <span className="text-xs text-amber-600 dark:text-amber-400">(7-9AM, 5-9PM)</span>
         </div>
         <div className="flex items-center gap-3">
-          <div className="w-5 h-5 bg-gradient-to-r from-purple-400 to-purple-500 rounded-lg shadow-sm"></div>
-          <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">Unfriendly</span>
-          <span className="text-xs text-gray-500 dark:text-gray-400">(Night/Early)</span>
+          <div className="w-5 h-5 bg-purple-500 rounded-lg shadow-sm"></div>
+          <span className="text-sm font-semibold text-purple-700 dark:text-purple-300">Unfriendly</span>
+          <span className="text-xs text-purple-600 dark:text-purple-400">(Night/Early)</span>
         </div>
       </div>
 
@@ -141,16 +141,16 @@ export default function Timeline({ cities, day, sourceTZ, durationMins, suggesti
                     
                     let bgClass, hoverClass, label;
                     if (isComfort) {
-                      bgClass = 'bg-gradient-to-br from-emerald-400 to-emerald-500';
-                      hoverClass = 'hover:from-emerald-300 hover:to-emerald-400';
+                      bgClass = 'bg-emerald-500';
+                      hoverClass = 'hover:bg-emerald-400';
                       label = 'Comfortable';
                     } else if (isBorder) {
-                      bgClass = 'bg-gradient-to-br from-amber-400 to-amber-500';
-                      hoverClass = 'hover:from-amber-300 hover:to-amber-400';
+                      bgClass = 'bg-amber-500';
+                      hoverClass = 'hover:bg-amber-400';
                       label = 'Borderline';
                     } else {
-                      bgClass = 'bg-gradient-to-br from-purple-400 to-purple-500';
-                      hoverClass = 'hover:from-purple-300 hover:to-purple-400';
+                      bgClass = 'bg-purple-500';
+                      hoverClass = 'hover:bg-purple-400';
                       label = 'Unfriendly';
                     }
                     

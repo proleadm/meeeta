@@ -14,21 +14,21 @@ export default function BestWindowBanner({ suggestion, onCopy }: BestWindowBanne
     switch (quality) {
       case 'Comfortable':
         return {
-          badge: 'bg-gradient-to-r from-emerald-100 to-emerald-200 text-emerald-800 border-emerald-300 dark:from-emerald-900/30 dark:to-emerald-800/30 dark:text-emerald-300 dark:border-emerald-700',
+          badge: 'bg-emerald-500 text-white shadow-emerald-500/25',
           accent: 'from-emerald-500/10 to-emerald-600/10',
-          border: 'border-emerald-200 dark:border-emerald-700'
+          border: 'border-emerald-500 dark:border-emerald-400'
         };
       case 'Mixed':
         return {
-          badge: 'bg-gradient-to-r from-amber-100 to-amber-200 text-amber-800 border-amber-300 dark:from-amber-900/30 dark:to-amber-800/30 dark:text-amber-300 dark:border-amber-700',
+          badge: 'bg-amber-500 text-white shadow-amber-500/25',
           accent: 'from-amber-500/10 to-amber-600/10',
-          border: 'border-amber-200 dark:border-amber-700'
+          border: 'border-amber-500 dark:border-amber-400'
         };
       default:
         return {
-          badge: 'bg-gradient-to-r from-purple-100 to-purple-200 text-purple-800 border-purple-300 dark:from-purple-900/30 dark:to-purple-800/30 dark:text-purple-300 dark:border-purple-700',
+          badge: 'bg-purple-500 text-white shadow-purple-500/25',
           accent: 'from-purple-500/10 to-purple-600/10',
-          border: 'border-purple-200 dark:border-purple-700'
+          border: 'border-purple-500 dark:border-purple-400'
         };
     }
   };
@@ -50,7 +50,7 @@ export default function BestWindowBanner({ suggestion, onCopy }: BestWindowBanne
                 Best Overlap
               </span>
             </div>
-            <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold border ${styles.badge}`}>
+            <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold shadow-lg ${styles.badge}`}>
               {quality}
             </span>
           </div>

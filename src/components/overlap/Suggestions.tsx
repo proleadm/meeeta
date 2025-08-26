@@ -53,11 +53,23 @@ export default function Suggestions({ suggestions, sourceTZ, cities = [], durati
 
   const getComfortBadge = (score: number) => {
     if (score >= 2 * cities.length * 0.8) {
-      return { label: 'Comfortable', class: 'bg-gradient-to-r from-emerald-100 to-emerald-200 text-emerald-800 border-emerald-300 dark:from-emerald-900/30 dark:to-emerald-800/30 dark:text-emerald-300 dark:border-emerald-700' };
+      return { 
+        label: 'Comfortable', 
+        class: 'bg-emerald-500 text-white border-emerald-600 shadow-emerald-500/25',
+        cardBorder: 'hover:border-emerald-300 dark:hover:border-emerald-600'
+      };
     } else if (score >= cities.length * 0.5) {
-      return { label: 'Borderline', class: 'bg-gradient-to-r from-amber-100 to-amber-200 text-amber-800 border-amber-300 dark:from-amber-900/30 dark:to-amber-800/30 dark:text-amber-300 dark:border-amber-700' };
+      return { 
+        label: 'Borderline', 
+        class: 'bg-amber-500 text-white border-amber-600 shadow-amber-500/25',
+        cardBorder: 'hover:border-amber-300 dark:hover:border-amber-600'
+      };
     } else {
-      return { label: 'Unfriendly', class: 'bg-gradient-to-r from-purple-100 to-purple-200 text-purple-800 border-purple-300 dark:from-purple-900/30 dark:to-purple-800/30 dark:text-purple-300 dark:border-purple-700' };
+      return { 
+        label: 'Unfriendly', 
+        class: 'bg-purple-500 text-white border-purple-600 shadow-purple-500/25',
+        cardBorder: 'hover:border-purple-300 dark:hover:border-purple-600'
+      };
     }
   };
 
@@ -92,7 +104,7 @@ export default function Suggestions({ suggestions, sourceTZ, cities = [], durati
             return (
               <div 
                 key={idx} 
-                className="group relative rounded-xl border border-gray-200 dark:border-gray-700 bg-white/80 dark:bg-gray-800/80 p-5 transition-all duration-200 hover:bg-white dark:hover:bg-gray-800 hover:shadow-lg hover:shadow-black/5 hover:border-blue-300 dark:hover:border-blue-600 cursor-pointer"
+                className={`group relative rounded-xl border border-gray-200 dark:border-gray-700 bg-white/80 dark:bg-gray-800/80 p-5 transition-all duration-200 hover:bg-white dark:hover:bg-gray-800 hover:shadow-lg hover:shadow-black/5 ${badge.cardBorder} cursor-pointer`}
                 onMouseEnter={() => onHover?.(s)}
                 onMouseLeave={() => onLeave?.()}
                 onClick={() => onPick?.(s)}
@@ -104,7 +116,7 @@ export default function Suggestions({ suggestions, sourceTZ, cities = [], durati
                       <h3 className="font-semibold text-gray-900 dark:text-gray-100 text-lg">
                         {s.label}
                       </h3>
-                      <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium border ${badge.class}`}>
+                      <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold shadow-lg ${badge.class}`}>
                         {badge.label}
                       </span>
                     </div>
