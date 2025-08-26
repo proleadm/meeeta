@@ -26,7 +26,7 @@ const tabs = [
     label: 'Overlap', 
     icon: Users, 
     href: '/overlap',
-    enabled: false 
+    enabled: true 
   },
   { 
     id: 'planner', 
