@@ -141,11 +141,11 @@ export default function Timeline({ cities, day, sourceTZ, durationMins, suggesti
                 </div>
               </div>
 
-              {/* Timeline row - 24 blocks representing 24 hours in source timezone */}
+              {/* Timeline row - 24 segments showing local comfort levels */}
               <div className="relative bg-gray-100 dark:bg-gray-800 rounded-xl p-2">
-                <div className="grid grid-cols-24 gap-1 h-16">
+                <div className="flex h-16 rounded-lg overflow-hidden">
                   {Array.from({ length: 24 }).map((_, hour) => {
-                    // This block represents hour X in the source timezone
+                    // This segment represents hour X in the source timezone
                     const sourceHour = sourceDay.set({ hour, minute: 0 });
                     
                     // Convert to local time in this city
@@ -153,50 +153,47 @@ export default function Timeline({ cities, day, sourceTZ, durationMins, suggesti
                     const localHour = localTime.hour;
                     
                     // Determine comfort level based on LOCAL time in this city
-                    let isComfort, isBorder, label, bgColor;
+                    let label, bgColor, textColor;
                     
                     if (localHour >= 9 && localHour < 17) {
                       // 9 AM - 5 PM local = Comfortable (business hours)
-                      isComfort = true;
-                      isBorder = false;
                       label = 'Comfortable';
-                      bgColor = '#22c55e'; // emerald-500
+                      bgColor = 'bg-emerald-500';
+                      textColor = 'text-white';
                     } else if ((localHour >= 7 && localHour < 9) || (localHour >= 17 && localHour < 21)) {
                       // 7-9 AM or 5-9 PM local = Borderline (shoulder hours)
-                      isComfort = false;
-                      isBorder = true;
                       label = 'Borderline';
-                      bgColor = '#f59e0b'; // amber-500
+                      bgColor = 'bg-amber-500';
+                      textColor = 'text-white';
                     } else {
                       // Night/early morning local = Unfriendly
-                      isComfort = false;
-                      isBorder = false;
                       label = 'Unfriendly';
-                      bgColor = '#a855f7'; // purple-500
+                      bgColor = 'bg-purple-500';
+                      textColor = 'text-white';
                     }
                     
                     const sourceTimeStr = sourceHour.toFormat('HH:mm');
                     const localTimeStr = localTime.toFormat('HH:mm');
-                    const title = `Source: ${sourceTimeStr} → ${c.name}: ${localTimeStr} (${label})`;
+                    const title = `${sourceTimeStr} source → ${localTimeStr} ${c.name} (${label})`;
 
                     return (
                       <div
                         key={hour}
-                        className="rounded-md h-full w-full cursor-pointer transition-all duration-200 shadow-sm hover:shadow-md relative group min-h-[3rem] border border-white/20"
+                        className={`flex-1 ${bgColor} ${textColor} cursor-pointer transition-all duration-200 hover:brightness-110 relative group flex items-center justify-center border-r border-white/10 last:border-r-0`}
                         title={title}
-                        style={{ 
-                          backgroundColor: bgColor,
-                          minHeight: '48px'
-                        }}
                       >
-                        {/* Visual indicator for debugging */}
-                        <div className="absolute inset-0 flex items-center justify-center text-white text-xs font-bold opacity-75">
-                          {isComfort ? '✓' : isBorder ? '~' : '×'}
-                        </div>
+                        {/* Hour label for major hours */}
+                        {hour % 6 === 0 && (
+                          <div className="text-xs font-bold opacity-80">
+                            {hour.toString().padStart(2, '0')}
+                          </div>
+                        )}
                         
                         {/* Tooltip */}
                         <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-20">
-                          {sourceTimeStr} → {localTimeStr} • {label}
+                          <div className="font-semibold">{sourceTimeStr} source</div>
+                          <div>{localTimeStr} in {c.name}</div>
+                          <div className="text-xs opacity-75">{label}</div>
                         </div>
                       </div>
                     );
