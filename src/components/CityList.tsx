@@ -37,37 +37,54 @@ export function CityList() {
   // If empty, show premium empty state
   if (sortedCities.length === 0) {
     return (
-      <div className="flex items-center justify-center py-24">
-        <div className="text-center space-y-8 max-w-md">
-          {/* Illustration */}
+      <div className="flex items-center justify-center py-32">
+        <div className="text-center space-y-12 max-w-lg">
+          {/* Premium illustration */}
           <div className="relative">
-            <div className="w-32 h-32 mx-auto bg-gradient-to-br from-primary/10 via-primary/5 to-transparent rounded-3xl flex items-center justify-center">
-              <div className="w-20 h-20 bg-gradient-to-br from-primary/20 to-primary/10 rounded-2xl flex items-center justify-center">
-                <svg className="w-10 h-10 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="w-40 h-40 mx-auto bg-gradient-to-br from-primary/10 via-primary/5 to-transparent rounded-[2rem] flex items-center justify-center backdrop-blur-sm border border-primary/10">
+              <div className="w-24 h-24 bg-gradient-to-br from-primary/20 to-primary/10 rounded-2xl flex items-center justify-center shadow-lg">
+                <svg className="w-12 h-12 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 6v6l4 2" />
                   <circle cx="12" cy="12" r="10" strokeWidth={1.5} />
                 </svg>
               </div>
             </div>
-            {/* Floating elements */}
-            <div className="absolute -top-2 -right-2 w-6 h-6 bg-gradient-to-br from-blue-400 to-blue-500 rounded-full opacity-60 animate-bounce" style={{animationDelay: '0.5s'}}></div>
-            <div className="absolute -bottom-2 -left-2 w-4 h-4 bg-gradient-to-br from-green-400 to-green-500 rounded-full opacity-60 animate-bounce" style={{animationDelay: '1s'}}></div>
-            <div className="absolute top-1/2 -left-4 w-3 h-3 bg-gradient-to-br from-orange-400 to-orange-500 rounded-full opacity-60 animate-bounce" style={{animationDelay: '1.5s'}}></div>
+            {/* Enhanced floating elements */}
+            <div className="absolute -top-3 -right-3 w-8 h-8 bg-gradient-to-br from-blue-400 to-blue-500 rounded-2xl opacity-70 animate-bounce shadow-lg" style={{animationDelay: '0.5s'}}></div>
+            <div className="absolute -bottom-3 -left-3 w-6 h-6 bg-gradient-to-br from-green-400 to-green-500 rounded-xl opacity-70 animate-bounce shadow-lg" style={{animationDelay: '1s'}}></div>
+            <div className="absolute top-1/2 -left-6 w-4 h-4 bg-gradient-to-br from-orange-400 to-orange-500 rounded-lg opacity-70 animate-bounce shadow-lg" style={{animationDelay: '1.5s'}}></div>
+            <div className="absolute top-8 -right-8 w-3 h-3 bg-gradient-to-br from-purple-400 to-purple-500 rounded-full opacity-70 animate-bounce shadow-lg" style={{animationDelay: '2s'}}></div>
           </div>
           
-          {/* Content */}
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <h3 className="text-2xl font-bold text-foreground">Track time worldwide</h3>
-              <p className="text-muted-foreground leading-relaxed">
-                Add cities from around the globe to keep track of multiple time zones at once. Perfect for remote teams, travel planning, or staying connected with friends and family.
+          {/* Enhanced content */}
+          <div className="space-y-6">
+            <div className="space-y-4">
+              <h3 className="text-3xl font-bold text-foreground">Your Global Dashboard Awaits</h3>
+              <p className="text-lg text-muted-foreground leading-relaxed">
+                Transform your workflow with real-time timezone tracking. Add cities where your team, clients, and partners are located to stay perfectly synchronized across the globe.
               </p>
             </div>
             
-            <div className="pt-4">
-              <div className="inline-flex items-center gap-2 text-sm text-muted-foreground bg-muted/30 px-4 py-2 rounded-full">
+            <div className="flex flex-col items-center gap-4">
+              <div className="inline-flex items-center gap-3 text-sm text-muted-foreground bg-gradient-to-r from-muted/50 to-muted/30 px-6 py-3 rounded-full border border-border/50 backdrop-blur-sm">
                 <div className="w-2 h-2 bg-primary rounded-full animate-pulse"></div>
-                Click "Add City" above to get started
+                Click "Add City" above to create your first timezone
+              </div>
+              
+              {/* Feature highlights */}
+              <div className="flex items-center gap-6 text-xs text-muted-foreground mt-4">
+                <div className="flex items-center gap-2">
+                  <div className="w-1.5 h-1.5 bg-green-500 rounded-full"></div>
+                  <span>Business Hours</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-1.5 h-1.5 bg-blue-500 rounded-full"></div>
+                  <span>DST Tracking</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-1.5 h-1.5 bg-orange-500 rounded-full"></div>
+                  <span>Time Zones</span>
+                </div>
               </div>
             </div>
           </div>
@@ -76,7 +93,7 @@ export function CityList() {
     );
   }
   
-  // Render sorted cities as responsive grid
+  // Render sorted cities as responsive grid (5 columns on large screens)
   return (
     <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
       {sortedCities.map((city) => (

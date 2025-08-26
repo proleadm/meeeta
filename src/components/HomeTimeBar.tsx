@@ -34,39 +34,39 @@ export default function HomeTimeBar() {
 
   return (
     <div className="relative">
-      {/* Premium glass morphism background */}
-      <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5 rounded-3xl"></div>
-      <div className="relative backdrop-blur-xl bg-card/50 border border-border/50 rounded-3xl p-8 shadow-2xl shadow-primary/5">
-        <div className="flex items-center justify-between gap-6">
-          <div className="min-w-0 space-y-3">
-            <div className="flex items-center gap-3">
+      {/* Refined glass morphism background */}
+      <div className="absolute inset-0 bg-gradient-to-r from-primary/3 via-primary/6 to-primary/3 rounded-2xl"></div>
+      <div className="relative backdrop-blur-xl bg-card/40 border border-border/30 rounded-2xl p-6 shadow-xl shadow-primary/5">
+        <div className="flex items-center justify-between gap-4">
+          <div className="min-w-0 space-y-2">
+            <div className="flex items-center gap-2.5">
               <div className="flex items-center gap-2">
-                <div className="w-2 h-2 bg-primary rounded-full animate-pulse"></div>
-                <span className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Home Time</span>
+                <div className="w-1.5 h-1.5 bg-primary rounded-full animate-pulse"></div>
+                <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Home Time</span>
               </div>
               {isDst && (
-                <Badge className="bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-100 border-0 shadow-sm">
+                <Badge className="bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-100 border-0 shadow-sm text-xs px-2 py-0.5 h-5">
                   DST
                 </Badge>
               )}
             </div>
-            <div className="space-y-1">
-              <div className="text-lg font-bold text-foreground">{homeTZ.replace('_', ' ')}</div>
-              <div className="text-sm text-muted-foreground font-medium">
+            <div className="space-y-0.5">
+              <div className="text-base font-bold text-foreground">{homeTZ.replace('_', ' ')}</div>
+              <div className="text-xs text-muted-foreground font-medium">
                 {offsetStr} • {dateStr}
               </div>
             </div>
           </div>
           
-          <div className="flex items-center gap-4">
-            <div className="text-right space-y-1">
+          <div className="flex items-center gap-3">
+            <div className="text-right space-y-0.5">
               <div
-                className="font-mono text-5xl md:text-6xl font-bold tabular-nums tracking-tight bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text text-transparent"
+                className="font-mono text-3xl md:text-4xl font-bold tabular-nums tracking-tight bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text text-transparent"
                 suppressHydrationWarning
               >
                 {timeStr}
               </div>
-              <div className="text-xs text-muted-foreground uppercase tracking-wider text-right">
+              <div className="text-xs text-muted-foreground uppercase tracking-wider text-right opacity-70">
                 Live Time
               </div>
             </div>
@@ -74,7 +74,7 @@ export default function HomeTimeBar() {
               size="sm"
               variant="outline"
               onClick={handleCopy}
-              className="h-10 px-4 bg-primary/5 border-primary/20 hover:bg-primary/10 hover:border-primary/30 transition-all duration-200"
+              className="h-8 px-3 text-xs bg-primary/5 border-primary/20 hover:bg-primary/10 hover:border-primary/30 transition-all duration-200 hover:scale-105"
               aria-label="Copy home time"
             >
               {copied ? 'Copied' : 'Copy'}
