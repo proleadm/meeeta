@@ -123,47 +123,51 @@ export default function Timeline({ cities, day, sourceTZ, durationMins, suggesti
                 </div>
               </div>
 
-              {/* Timeline row */}
+              {/* Timeline row - 24 blocks representing 24 hours in source timezone */}
               <div className="relative bg-gray-100 dark:bg-gray-800 rounded-xl p-2">
-                <div className={`grid ${durationMins >= 60 ? 'grid-cols-24' : 'grid-cols-48'} gap-1 h-16`}>
-                  {Array.from({ length: durationMins >= 60 ? 24 : 48 }).map((_, idx) => {
-                    const startMin = idx * blockMinutes;
-                    const blockStart = sourceDay.set({ hour: Math.floor(startMin / 60), minute: startMin % 60 });
-                    const blockEnd = blockStart.plus({ minutes: blockMinutes });
-                    const blockIv = Interval.fromDateTimes(blockStart, blockEnd);
-                    const biz = mapCityBusinessToSourceDay(c.timezone, sourceTZ, sourceDay, '09:00', '17:00');
-                    const shoulders = [
-                      ...mapCityBusinessToSourceDay(c.timezone, sourceTZ, sourceDay, '07:00', '09:00'),
-                      ...mapCityBusinessToSourceDay(c.timezone, sourceTZ, sourceDay, '17:00', '21:00'),
-                    ];
-                    const isComfort = biz.some((w) => w.intersection(blockIv));
-                    const isBorder = !isComfort && shoulders.some((w) => w.intersection(blockIv));
+                <div className="grid grid-cols-24 gap-1 h-16">
+                  {Array.from({ length: 24 }).map((_, hour) => {
+                    // This block represents hour X in the source timezone
+                    const sourceHour = sourceDay.set({ hour, minute: 0 });
                     
-                    let bgClass, hoverClass, label;
-                    if (isComfort) {
-                      bgClass = 'bg-emerald-500';
-                      hoverClass = 'hover:bg-emerald-400';
+                    // Convert to local time in this city
+                    const localTime = sourceHour.setZone(c.timezone);
+                    const localHour = localTime.hour;
+                    
+                    // Determine comfort level based on LOCAL time in this city
+                    let isComfort, isBorder, label, bgColor;
+                    
+                    if (localHour >= 9 && localHour < 17) {
+                      // 9 AM - 5 PM local = Comfortable (business hours)
+                      isComfort = true;
+                      isBorder = false;
                       label = 'Comfortable';
-                    } else if (isBorder) {
-                      bgClass = 'bg-amber-500';
-                      hoverClass = 'hover:bg-amber-400';
+                      bgColor = '#22c55e'; // emerald-500
+                    } else if ((localHour >= 7 && localHour < 9) || (localHour >= 17 && localHour < 21)) {
+                      // 7-9 AM or 5-9 PM local = Borderline (shoulder hours)
+                      isComfort = false;
+                      isBorder = true;
                       label = 'Borderline';
+                      bgColor = '#f59e0b'; // amber-500
                     } else {
-                      bgClass = 'bg-purple-500';
-                      hoverClass = 'hover:bg-purple-400';
+                      // Night/early morning local = Unfriendly
+                      isComfort = false;
+                      isBorder = false;
                       label = 'Unfriendly';
+                      bgColor = '#a855f7'; // purple-500
                     }
                     
-                    const localTime = blockStart.setZone(c.timezone).toFormat('HH:mm');
-                    const title = `${c.name}, ${localTime} — ${label}`;
+                    const sourceTimeStr = sourceHour.toFormat('HH:mm');
+                    const localTimeStr = localTime.toFormat('HH:mm');
+                    const title = `Source: ${sourceTimeStr} → ${c.name}: ${localTimeStr} (${label})`;
 
                     return (
                       <div
-                        key={idx}
-                        className={`${bgClass} ${hoverClass} rounded-md h-full w-full cursor-pointer transition-all duration-200 shadow-sm hover:shadow-md relative group min-h-[3rem] border border-white/20`}
+                        key={hour}
+                        className="rounded-md h-full w-full cursor-pointer transition-all duration-200 shadow-sm hover:shadow-md relative group min-h-[3rem] border border-white/20"
                         title={title}
                         style={{ 
-                          backgroundColor: isComfort ? '#22c55e' : isBorder ? '#f59e0b' : '#a855f7',
+                          backgroundColor: bgColor,
                           minHeight: '48px'
                         }}
                       >
@@ -174,7 +178,7 @@ export default function Timeline({ cities, day, sourceTZ, durationMins, suggesti
                         
                         {/* Tooltip */}
                         <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-20">
-                          {localTime} • {label}
+                          {sourceTimeStr} → {localTimeStr} • {label}
                         </div>
                       </div>
                     );
