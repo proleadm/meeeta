@@ -56,6 +56,33 @@ export function toMinutesOfDay(dt: DateTime): number {
   return dt.hour * 60 + dt.minute;
 }
 
+export function buildShoulderWindows(opts: BuildOpts): Interval[] {
+  const { date, tz } = opts;
+  const a = buildBusinessWindow({ date, tz, start: '07:00', end: '09:00' });
+  const b = buildBusinessWindow({ date, tz, start: '17:00', end: '21:00' });
+  return [a, b];
+}
+
+export function scoreSlot(slot: Interval, cities: { timezone: string }[]): number {
+  let score = 0;
+  for (const c of cities) {
+    const day = slot.start.setZone(c.timezone).startOf('day');
+    const biz = buildBusinessWindow({ date: day, tz: c.timezone });
+    const shoulders = buildShoulderWindows({ date: day, tz: c.timezone });
+    const sBiz = slot.set({ start: slot.start.setZone(c.timezone), end: slot.end.setZone(c.timezone) });
+    if (sBiz.intersection(biz)) {
+      score += 2; // comfortable
+      continue;
+    }
+    if (shoulders.some((iv) => sBiz.intersection(iv))) {
+      score += 1; // borderline
+      continue;
+    }
+    // unfriendly adds 0
+  }
+  return score;
+}
+
 export function formatSlot(
   slot: Interval,
   cities: { name: string; timezone: string }[],
