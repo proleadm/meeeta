@@ -14,7 +14,7 @@ interface CityItemProps {
 }
 
 export function CityItem({ city }: CityItemProps) {
-  const now = useClock(state => state.now);
+  const now = useClock();
   const format = usePrefs(state => state.prefs.format);
   const removeCity = usePrefs(state => state.removeCity);
   const togglePin = usePrefs(state => state.togglePin);

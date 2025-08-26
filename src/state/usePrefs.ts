@@ -8,6 +8,7 @@ export type TrackedCity = City;
 export interface Prefs {
   format: TimeFormat;
   homeTZ: string;
+  workingHours: { start: number; end: number };
 }
 
 interface PrefsState {
@@ -34,6 +35,7 @@ export const usePrefs = create<PrefsState>()(
       prefs: {
         format: '12h',
         homeTZ: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        workingHours: { start: 9, end: 17 },
       },
 
       // Actions

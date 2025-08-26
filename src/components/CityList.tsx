@@ -2,8 +2,41 @@
 
 import { useMemo } from 'react';
 import TimeCard from './TimeCard';
+import { AddCityDialog } from './AddCityDialog';
 import { usePrefs } from '@/state/usePrefs';
 import { useMounted } from '@/hooks/useMounted';
+
+function SkeletonCard() {
+  return (
+    <div className="h-full flex flex-col justify-between rounded-2xl border bg-card p-5 shadow-lg animate-pulse">
+      <div className="space-y-3">
+        <div className="flex items-center gap-2.5">
+          <div className="w-8 h-6 bg-muted rounded-sm"></div>
+          <div className="h-5 bg-muted rounded w-24"></div>
+        </div>
+        <div className="text-center space-y-2">
+          <div className="h-12 bg-muted rounded w-32 mx-auto"></div>
+          <div className="h-4 bg-muted rounded w-20 mx-auto"></div>
+        </div>
+        <div className="space-y-2">
+          <div className="flex justify-between">
+            <div className="h-3 bg-muted rounded w-16"></div>
+            <div className="h-3 bg-muted rounded w-8"></div>
+          </div>
+          <div className="flex justify-between">
+            <div className="h-3 bg-muted rounded w-20"></div>
+            <div className="h-3 bg-muted rounded w-12"></div>
+          </div>
+        </div>
+      </div>
+      <div className="flex justify-center gap-1 pt-4">
+        <div className="w-8 h-8 bg-muted rounded-full"></div>
+        <div className="w-8 h-8 bg-muted rounded-full"></div>
+        <div className="w-8 h-8 bg-muted rounded-full"></div>
+      </div>
+    </div>
+  );
+}
 
 export function CityList() {
   const mounted = useMounted();
@@ -20,16 +53,10 @@ export function CityList() {
 
   if (!mounted) {
     return (
-      <div className="flex items-center justify-center py-24">
-        <div className="text-center space-y-4">
-          <div className="w-16 h-16 mx-auto bg-gradient-to-br from-primary/20 to-primary/10 rounded-2xl flex items-center justify-center">
-            <div className="w-8 h-8 border-2 border-primary/30 border-t-primary rounded-full animate-spin"></div>
-          </div>
-          <div className="space-y-2">
-            <h3 className="text-lg font-semibold text-foreground">Loading your clocks...</h3>
-            <p className="text-sm text-muted-foreground">Just a moment while we sync your time zones</p>
-          </div>
-        </div>
+      <div className="grid gap-5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 auto-rows-fr">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <SkeletonCard key={i} />
+        ))}
       </div>
     );
   }
@@ -93,12 +120,33 @@ export function CityList() {
     );
   }
   
-  // Render sorted cities as responsive grid (5 columns on large screens)
+  // Render sorted cities as responsive grid with bottom CTA
   return (
-    <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-      {sortedCities.map((city) => (
-        <TimeCard key={city.id} city={city} />
-      ))}
+    <div className="space-y-6">
+      <div className="grid gap-5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 auto-rows-fr">
+        {sortedCities.map((city) => (
+          <TimeCard key={city.id} city={city} />
+        ))}
+      </div>
+      
+      {/* Bottom Add City CTA */}
+      {sortedCities.length > 0 && (
+        <div className="flex justify-center pt-4">
+          <AddCityDialog>
+            <div className="flex items-center gap-3 px-6 py-3 rounded-2xl bg-gradient-to-r from-blue-500/5 to-purple-500/5 border border-blue-500/10 hover:from-blue-500/10 hover:to-purple-500/10 hover:border-blue-500/20 transition-all duration-300 cursor-pointer group">
+              <div className="w-8 h-8 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center group-hover:scale-110 transition-transform duration-200">
+                <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                </svg>
+              </div>
+              <div>
+                <div className="text-sm font-semibold text-foreground">Add Another City</div>
+                <div className="text-xs text-muted-foreground">Track more locations worldwide</div>
+              </div>
+            </div>
+          </AddCityDialog>
+        </div>
+      )}
     </div>
   );
 }
