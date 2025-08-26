@@ -2,7 +2,7 @@
 
 import type { City } from '@/lib/time';
 import { DateTime } from 'luxon';
-import { mapCityBusinessToSourceDay, buildBusinessWindow } from '@/lib/time-overlap';
+import { mapCityBusinessToSourceDay, buildBusinessWindow, intersectAll, sliceByDuration } from '@/lib/time-overlap';
 
 interface TimelineProps {
   cities: City[];
@@ -13,7 +13,7 @@ interface TimelineProps {
 
 function pct(mins: number) { return `${(mins / 1440) * 100}%`; }
 
-export default function Timeline({ cities, day, sourceTZ }: TimelineProps) {
+export default function Timeline({ cities, day, sourceTZ, durationMins }: TimelineProps) {
   const sourceDay = typeof day === 'string'
     ? (day === 'today' ? DateTime.now() : DateTime.now().plus({ days: 1 }))
     : DateTime.fromJSDate(day as Date);
@@ -75,6 +75,30 @@ export default function Timeline({ cities, day, sourceTZ }: TimelineProps) {
             </div>
           </div>
         ))}
+        {/* Global overlap highlights based on top suggestions (visual only, simple heuristic) */}
+        {(() => {
+          if (!cities.length) return null;
+          const src = sourceDay;
+          const perCity = cities.map((c) => {
+            const biz = mapCityBusinessToSourceDay(c.timezone, sourceTZ, src, '09:00', '17:00');
+            const early = mapCityBusinessToSourceDay(c.timezone, sourceTZ, src, '07:00', '09:00');
+            const late = mapCityBusinessToSourceDay(c.timezone, sourceTZ, src, '17:00', '21:00');
+            return [...biz, ...early, ...late];
+          });
+          const overlap = intersectAll(perCity);
+          const slots = sliceByDuration(overlap, durationMins || 30, 5).slice(0, 5);
+          return (
+            <div className="relative h-0">
+              {slots.map((w, i) => {
+                const startMin = w.start.setZone(sourceTZ).hour * 60 + w.start.setZone(sourceTZ).minute;
+                const lenMin = Math.max(0, Math.round(w.length('minutes')));
+                return (
+                  <div key={`hl-${i}`} className="absolute -top-7 h-3 bg-primary/25 border border-primary/40 rounded" style={{ left: pct(startMin), width: pct(lenMin) }} aria-label="Overlap highlight" />
+                );
+              })}
+            </div>
+          );
+        })()}
         {cities.length === 0 && (
           <div className="text-sm text-muted-foreground">Select cities to see timelines.</div>
         )}
