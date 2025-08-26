@@ -58,7 +58,7 @@ export default function OverlapPage() {
         />
 
         {/* Suggestions */}
-        <Suggestions suggestions={suggestions} sourceTZ={sourceTZ} />
+        <Suggestions sourceTZ={sourceTZ} cities={selectedCities} durationMins={durationMins} day={day} />
       </div>
     </div>
   );
