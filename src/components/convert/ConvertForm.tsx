@@ -239,8 +239,8 @@ export default function ConvertForm({ defaultInput = '', defaultSourceTZ, onConv
                 return (
                   <div
                     key={i}
-                    className={`absolute top-0 w-px bg-gray-400/80 dark:bg-gray-500/80 ${
-                      isMajorTick ? 'h-3' : 'h-2'
+                    className={`absolute top-0 w-px bg-gray-500 dark:bg-gray-400 ${
+                      isMajorTick ? 'h-4' : 'h-3'
                     }`}
                     style={{ left: `${position}%` }}
                   />
@@ -275,7 +275,7 @@ export default function ConvertForm({ defaultInput = '', defaultSourceTZ, onConv
             </div>
             
             {/* Hour labels */}
-            <div className="absolute inset-x-0 -bottom-6 pointer-events-none hidden sm:block">
+            <div className="absolute inset-x-0 bottom-2 pointer-events-none hidden sm:block">
               {[0, 6, 12, 18, 24].map((hour) => {
                 const position = (hour / 24) * 100; // Fixed positioning calculation
                 return (
