@@ -1,6 +1,8 @@
 'use client';
 
 import type { City } from '@/lib/time';
+import { DateTime } from 'luxon';
+import { mapCityBusinessToSourceDay, buildBusinessWindow } from '@/lib/time-overlap';
 
 interface TimelineProps {
   cities: City[];
@@ -9,9 +11,21 @@ interface TimelineProps {
   durationMins: number;
 }
 
+function pct(mins: number) { return `${(mins / 1440) * 100}%`; }
+
 export default function Timeline({ cities, day, sourceTZ }: TimelineProps) {
+  const sourceDay = typeof day === 'string'
+    ? (day === 'today' ? DateTime.now() : DateTime.now().plus({ days: 1 }))
+    : DateTime.fromJSDate(day as Date);
+
   return (
     <div className="rounded-2xl border bg-card shadow-sm p-4 space-y-4">
+      {/* Legend */}
+      <div className="flex items-center gap-4 text-xs text-muted-foreground">
+        <div className="inline-flex items-center gap-2"><span className="w-3 h-2 rounded-sm bg-emerald-500/40" /> Comfortable</div>
+        <div className="inline-flex items-center gap-2"><span className="w-3 h-2 rounded-sm bg-amber-500/35" /> Borderline</div>
+        <div className="inline-flex items-center gap-2"><span className="w-3 h-2 rounded-sm bg-muted/40" /> Unfriendly</div>
+      </div>
       {/* Ticks */}
       <div className="relative">
         <div className="h-1 rounded-full bg-gradient-to-r from-gray-200 via-gray-300 to-gray-200 dark:from-gray-700 dark:via-gray-600 dark:to-gray-700" />
@@ -32,7 +46,33 @@ export default function Timeline({ cities, day, sourceTZ }: TimelineProps) {
               <div className="font-medium">{c.name}</div>
               <div className="text-muted-foreground text-xs">{c.timezone}</div>
             </div>
-            <div className="h-3 rounded-full bg-muted/60" />
+            <div className="relative h-3 rounded-full bg-muted/30 overflow-hidden">
+              {/* Comfortable (business 09-17) */}
+              {(() => {
+                const windows = mapCityBusinessToSourceDay(c.timezone, sourceTZ, sourceDay, '09:00', '17:00');
+                return windows.map((w, i) => {
+                  const startMin = w.start.setZone(sourceTZ).hour * 60 + w.start.setZone(sourceTZ).minute;
+                  const lenMin = Math.max(0, Math.round(w.length('minutes')));
+                  return (
+                    <div key={`biz-${i}`} className="absolute top-0 bottom-0 bg-emerald-500/40" style={{ left: pct(startMin), width: pct(lenMin) }} />
+                  );
+                });
+              })()}
+
+              {/* Borderline shoulders 07-09, 17-21 */}
+              {(() => {
+                const early = mapCityBusinessToSourceDay(c.timezone, sourceTZ, sourceDay, '07:00', '09:00');
+                const late = mapCityBusinessToSourceDay(c.timezone, sourceTZ, sourceDay, '17:00', '21:00');
+                const all = [...early, ...late];
+                return all.map((w, i) => {
+                  const startMin = w.start.setZone(sourceTZ).hour * 60 + w.start.setZone(sourceTZ).minute;
+                  const lenMin = Math.max(0, Math.round(w.length('minutes')));
+                  return (
+                    <div key={`shoulder-${i}`} className="absolute top-0 bottom-0 bg-amber-500/35" style={{ left: pct(startMin), width: pct(lenMin) }} />
+                  );
+                });
+              })()}
+            </div>
           </div>
         ))}
         {cities.length === 0 && (
