@@ -1,6 +1,24 @@
 import { DateTime, Interval, Duration } from 'luxon';
 import { getTimezoneAbbreviation, formatUtcOffset } from '@/lib/time-format';
 
+// Types according to spec
+export type Range = { start: number; end: number }; // minutes [0..1440)
+export type City = { id: string; name: string; country?: string; timezone: string };
+export type Slot = {
+  startMinute: number;
+  endMinute: number;
+  quality: 'comfortable' | 'borderline' | 'unfriendly';
+  perCity: Array<{
+    cityId: string;
+    localStart: DateTime;
+    localEnd: DateTime;
+    band: 'comfortable' | 'borderline' | 'unfriendly';
+    tzShort: string;
+  }>;
+  score: number;
+  interval: Interval; // For internal use
+};
+
 export type BuildOpts = { date: DateTime; tz: string; start?: string; end?: string };
 
 export function buildBusinessWindow(opts: BuildOpts): Interval {
@@ -137,6 +155,144 @@ export function mapCityBusinessToSourceDay(
     if (iv && iv.isValid && iv.length('minutes') > 0) mapped.push(iv);
   }
   return mapped;
+}
+
+// Main overlap computation functions according to spec
+export function getWindowsForCity(day: DateTime, tz: string): { 
+  comfortable: Range[]; 
+  borderline: Range[]; 
+  unfriendly: Range[] 
+} {
+  const comfortable = buildBusinessWindow({ date: day, tz, start: '09:00', end: '17:00' });
+  const shoulders = buildShoulderWindows({ date: day, tz });
+  
+  const comfortableRanges: Range[] = [{
+    start: toMinutesOfDay(comfortable.start),
+    end: toMinutesOfDay(comfortable.end)
+  }];
+  
+  const borderlineRanges: Range[] = shoulders.map(iv => ({
+    start: toMinutesOfDay(iv.start),
+    end: toMinutesOfDay(iv.end)
+  }));
+  
+  // Unfriendly = everything else (0-420, 1260-1440 typically)
+  const unfriendlyRanges: Range[] = [];
+  const allOccupied = [...comfortableRanges, ...borderlineRanges].sort((a, b) => a.start - b.start);
+  
+  let cursor = 0;
+  for (const range of allOccupied) {
+    if (cursor < range.start) {
+      unfriendlyRanges.push({ start: cursor, end: range.start });
+    }
+    cursor = Math.max(cursor, range.end);
+  }
+  if (cursor < 1440) {
+    unfriendlyRanges.push({ start: cursor, end: 1440 });
+  }
+  
+  return { comfortable: comfortableRanges, borderline: borderlineRanges, unfriendly: unfriendlyRanges };
+}
+
+export function intersectEligible(
+  cities: City[], 
+  sourceDay: DateTime, 
+  sourceTZ: string, 
+  durationMin: number, 
+  stepMin: number = 5
+): Slot[] {
+  // Get eligible windows (comfortable + borderline) for each city
+  const cityWindows: Interval[][] = [];
+  
+  for (const city of cities) {
+    const comfortable = mapCityBusinessToSourceDay(city.timezone, sourceTZ, sourceDay, '09:00', '17:00');
+    const shoulders = [
+      ...mapCityBusinessToSourceDay(city.timezone, sourceTZ, sourceDay, '07:00', '09:00'),
+      ...mapCityBusinessToSourceDay(city.timezone, sourceTZ, sourceDay, '17:00', '21:00'),
+    ];
+    cityWindows.push([...comfortable, ...shoulders]);
+  }
+  
+  // Find intersections
+  const overlaps = intersectAll(cityWindows);
+  
+  // Slice into slots
+  const slots = sliceByDuration(overlaps, durationMin, stepMin);
+  
+  // Score and format each slot
+  const scoredSlots: Slot[] = slots.map(slot => {
+    let totalScore = 100; // Base score
+    let minQuality: 'comfortable' | 'borderline' | 'unfriendly' = 'comfortable';
+    
+    const perCity = cities.map(city => {
+      const localStart = slot.start.setZone(city.timezone);
+      const localEnd = slot.end.setZone(city.timezone);
+      const localHour = localStart.hour;
+      
+      let band: 'comfortable' | 'borderline' | 'unfriendly';
+      let cityScore = 0;
+      
+      if (localHour >= 9 && localHour < 17) {
+        band = 'comfortable';
+        cityScore = 2;
+      } else if ((localHour >= 7 && localHour < 9) || (localHour >= 17 && localHour < 21)) {
+        band = 'borderline';
+        cityScore = 1;
+        if (minQuality === 'comfortable') minQuality = 'borderline';
+      } else {
+        band = 'unfriendly';
+        cityScore = -5;
+        minQuality = 'unfriendly';
+      }
+      
+      // Penalties for very early/late starts
+      if (localHour < 8 || localHour > 20) {
+        cityScore -= 3;
+      }
+      
+      totalScore += cityScore;
+      
+      return {
+        cityId: city.id,
+        localStart,
+        localEnd,
+        band,
+        tzShort: getTimezoneAbbreviation(city.timezone)
+      };
+    });
+    
+    return {
+      startMinute: toMinutesOfDay(slot.start.setZone(sourceTZ)),
+      endMinute: toMinutesOfDay(slot.end.setZone(sourceTZ)),
+      quality: minQuality,
+      perCity,
+      score: Math.round(totalScore / cities.length), // Normalize by city count
+      interval: slot
+    };
+  });
+  
+  // Sort by score desc, then start time asc
+  return scoredSlots
+    .sort((a, b) => b.score - a.score || a.startMinute - b.startMinute)
+    .slice(0, 5); // Top 5
+}
+
+export function formatSlotForCopy(slot: Slot, cities: City[], sourceTZ: string): string {
+  const sourceStart = slot.interval.start.setZone(sourceTZ);
+  const sourceEnd = slot.interval.end.setZone(sourceTZ);
+  
+  const lines = [
+    `${sourceStart.toFormat('EEE, MMM d • HH:mm')}–${sourceEnd.toFormat('HH:mm')} (${sourceTZ})`
+  ];
+  
+  for (const cityData of slot.perCity) {
+    const city = cities.find(c => c.id === cityData.cityId);
+    if (city) {
+      lines.push(`${city.name} — ${cityData.localStart.toFormat('HH:mm')}–${cityData.localEnd.toFormat('HH:mm')} ${cityData.tzShort}`);
+    }
+  }
+  
+  return lines.join('\n');
 }
 
 

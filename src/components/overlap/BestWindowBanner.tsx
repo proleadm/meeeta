@@ -1,32 +1,38 @@
 'use client';
 
+import type { Slot } from '@/lib/time-overlap';
+import type { City } from '@/lib/time';
+
 interface BestWindowBannerProps {
-  suggestion: null | { label: string; lines: { city: string; local: string }[]; score: number };
+  slot: Slot | null;
+  cities: City[];
+  sourceTZ: string;
   onCopy: () => void;
 }
 
-export default function BestWindowBanner({ suggestion, onCopy }: BestWindowBannerProps) {
-  if (!suggestion) return null;
+export default function BestWindowBanner({ slot, cities, sourceTZ, onCopy }: BestWindowBannerProps) {
+  if (!slot) return null;
   
-  const quality = suggestion.score >= 2 * 3 ? 'Comfortable' : suggestion.score >= 3 ? 'Mixed' : 'Borderline';
+  const quality = slot.quality === 'comfortable' ? 'Comfortable' : 
+                  slot.quality === 'borderline' ? 'Borderline' : 'Unfriendly';
   
   const getBadgeStyles = () => {
     switch (quality) {
       case 'Comfortable':
         return {
-          badge: 'bg-emerald-500 text-white shadow-emerald-500/25',
+          badge: 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/25',
           accent: 'from-emerald-500/10 to-emerald-600/10',
           border: 'border-emerald-500 dark:border-emerald-400'
         };
-      case 'Mixed':
+      case 'Borderline':
         return {
-          badge: 'bg-amber-500 text-white shadow-amber-500/25',
+          badge: 'bg-amber-500 text-white shadow-lg shadow-amber-500/25',
           accent: 'from-amber-500/10 to-amber-600/10',
           border: 'border-amber-500 dark:border-amber-400'
         };
       default:
         return {
-          badge: 'bg-purple-500 text-white shadow-purple-500/25',
+          badge: 'bg-purple-500 text-white shadow-lg shadow-purple-500/25',
           accent: 'from-purple-500/10 to-purple-600/10',
           border: 'border-purple-500 dark:border-purple-400'
         };
@@ -56,18 +62,21 @@ export default function BestWindowBanner({ suggestion, onCopy }: BestWindowBanne
           </div>
           
           <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-2">
-            {suggestion.label}
+            {slot.interval.start.setZone(sourceTZ).toFormat('EEE, MMM d • HH:mm')}–{slot.interval.end.setZone(sourceTZ).toFormat('HH:mm')} ({sourceTZ})
           </h3>
           
           <div className="flex flex-wrap gap-2">
-            {suggestion.lines.slice(0, 3).map((line, idx) => (
-              <div key={idx} className="text-sm text-gray-600 dark:text-gray-400 bg-white/60 dark:bg-gray-800/60 px-2 py-1 rounded-lg">
-                <span className="font-medium">{line.city}:</span> {line.local}
-              </div>
-            ))}
-            {suggestion.lines.length > 3 && (
+            {slot.perCity.slice(0, 3).map((cityData, idx) => {
+              const city = cities.find(c => c.id === cityData.cityId);
+              return (
+                <div key={idx} className="text-sm text-gray-600 dark:text-gray-400 bg-white/60 dark:bg-gray-800/60 px-2 py-1 rounded-lg">
+                  <span className="font-medium">{city?.name}:</span> {cityData.localStart.toFormat('HH:mm')}–{cityData.localEnd.toFormat('HH:mm')} {cityData.tzShort}
+                </div>
+              );
+            })}
+            {slot.perCity.length > 3 && (
               <div className="text-sm text-gray-500 dark:text-gray-500 bg-white/40 dark:bg-gray-800/40 px-2 py-1 rounded-lg">
-                +{suggestion.lines.length - 3} more
+                +{slot.perCity.length - 3} more
               </div>
             )}
           </div>
