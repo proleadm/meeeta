@@ -1,7 +1,7 @@
 'use client';
 
 import type { City } from '@/lib/time';
-import { DateTime } from 'luxon';
+import { DateTime, Interval } from 'luxon';
 import { mapCityBusinessToSourceDay, intersectAll, sliceByDuration } from '@/lib/time-overlap';
 import { useRef, useState, useEffect } from 'react';
 
@@ -87,7 +87,7 @@ export default function Timeline({ cities, day, sourceTZ, durationMins, suggesti
                   const startMin = idx * blockMinutes;
                   const blockStart = sourceDay.set({ hour: Math.floor(startMin / 60), minute: startMin % 60 });
                   const blockEnd = blockStart.plus({ minutes: blockMinutes });
-                  const blockIv = { start: blockStart, end: blockEnd } as any;
+                  const blockIv = Interval.fromDateTimes(blockStart, blockEnd);
                   const biz = mapCityBusinessToSourceDay(c.timezone, sourceTZ, sourceDay, '09:00', '17:00');
                   const shoulders = [
                     ...mapCityBusinessToSourceDay(c.timezone, sourceTZ, sourceDay, '07:00', '09:00'),
