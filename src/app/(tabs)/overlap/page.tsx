@@ -10,6 +10,7 @@ import { intersectEligible, formatSlotForCopy, type City as OverlapCity, type Sl
 import { usePrefs } from '@/state/usePrefs';
 import type { City } from '@/lib/time';
 import HomeTimeBar from '@/components/overlap/HomeTimeBar';
+import CustomSelectionBanner from '@/components/overlap/CustomSelectionBanner';
 
 export default function OverlapPage() {
   const homeTZ = usePrefs((s) => s.prefs.homeTZ);
@@ -29,6 +30,16 @@ export default function OverlapPage() {
   const [hoveredSlot, setHoveredSlot] = useState<Slot | null>(null);
   const [selectedTime, setSelectedTime] = useState<number | null>(null);
   const [selectedMinuteOfDay, setSelectedMinuteOfDay] = useState<number>(DateTime.now().setZone(homeTZ).hour * 60 + DateTime.now().setZone(homeTZ).minute);
+
+  // Clamp selection when duration changes or timezone changes (to keep band within day)
+  useEffect(() => {
+    setSelectedMinuteOfDay((prev) => {
+      let start = prev - Math.floor(durationMins / 2);
+      if (start < 0) return Math.floor(durationMins / 2);
+      if (start > 1440 - durationMins) return 1440 - Math.ceil(durationMins / 2);
+      return prev;
+    });
+  }, [durationMins, sourceTZ]);
 
   // Keep Overlap selected cities synced with Clocks (pinned first) until user adjusts locally
   useEffect(() => {
@@ -110,10 +121,21 @@ export default function OverlapPage() {
           }}
         />
 
+        {/* Custom selection banner (shows current marker window and copy) */}
+        <CustomSelectionBanner
+          cities={selectedCities}
+          sourceTZ={sourceTZ}
+          sourceDay={sourceDay}
+          selectedMinuteOfDay={selectedMinuteOfDay}
+          durationMins={durationMins}
+        />
+
         {/* Home Time Bar - anchor at very top of visualizer */}
         <HomeTimeBar
           selectedMinuteOfDay={selectedMinuteOfDay}
           onChangeMinute={setSelectedMinuteOfDay}
+          durationMins={durationMins}
+          timezone={sourceTZ}
         />
 
         {/* Timeline */}
@@ -133,6 +155,7 @@ export default function OverlapPage() {
           suggestions={suggestions}
           cities={selectedCities}
           sourceTZ={sourceTZ}
+          selectedMinuteOfDay={selectedMinuteOfDay}
           onHover={setHoveredSlot}
           onLeave={() => setHoveredSlot(null)}
           onPick={(slot) => {

@@ -137,6 +137,32 @@ export function isValidTimezone(timezone: string): boolean {
 }
 
 /**
+ * List all available IANA timezones (fallbacks to common city zones if not supported)
+ */
+export function listAllTimezones(): string[] {
+  try {
+    // Modern environments support this API
+    // @ts-ignore - supportedValuesOf may not exist in TS lib
+    const tzs: string[] = Intl.supportedValuesOf?.('timeZone') ?? [];
+    if (Array.isArray(tzs) && tzs.length > 0) return tzs;
+  } catch {}
+  // Fallback: unique timezones from our common cities list
+  const unique = new Set<string>();
+  for (const c of listCommonCities()) unique.add(c.timezone);
+  return Array.from(unique);
+}
+
+/**
+ * Search IANA timezones by substring (case-insensitive)
+ */
+export function searchTimezones(query: string): string[] {
+  const all = listAllTimezones();
+  const q = query.trim().toLowerCase();
+  if (!q) return all.slice(0, 100);
+  return all.filter((tz) => tz.toLowerCase().includes(q)).slice(0, 100);
+}
+
+/**
  * Get relative time difference between two timezones
  */
 export function getTimeDifference(fromTz: string, toTz: string): string {

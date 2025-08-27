@@ -11,9 +11,10 @@ interface SuggestionsProps {
   onLeave: () => void;
   onPick: (slot: Slot) => void;
   onCopy: (slot: Slot) => void;
+  selectedMinuteOfDay?: number | null;
 }
 
-export default function Suggestions({ suggestions, cities, sourceTZ, onHover, onLeave, onPick, onCopy }: SuggestionsProps) {
+export default function Suggestions({ suggestions, cities, sourceTZ, onHover, onLeave, onPick, onCopy, selectedMinuteOfDay }: SuggestionsProps) {
 
   const getComfortBadge = (quality: 'comfortable' | 'borderline' | 'unfriendly') => {
     switch (quality) {
@@ -66,10 +67,14 @@ export default function Suggestions({ suggestions, cities, sourceTZ, onHover, on
         <div className="space-y-4">
           {suggestions.map((slot, idx) => {
             const badge = getComfortBadge(slot.quality);
+            const containsMarker =
+              typeof selectedMinuteOfDay === 'number' &&
+              selectedMinuteOfDay >= slot.startMinute &&
+              selectedMinuteOfDay < slot.endMinute;
             return (
               <div 
                 key={idx} 
-                className={`group relative rounded-xl border border-gray-200 dark:border-gray-700 bg-white/80 dark:bg-gray-800/80 p-5 transition-all duration-200 hover:bg-white dark:hover:bg-gray-800 hover:shadow-lg hover:shadow-black/5 ${badge.cardBorder} cursor-pointer`}
+                className={`group relative rounded-xl border ${containsMarker ? 'border-blue-500 ring-1 ring-blue-400/60' : 'border-gray-200 dark:border-gray-700'} bg-white/80 dark:bg-gray-800/80 p-5 transition-all duration-200 hover:bg-white dark:hover:bg-gray-800 hover:shadow-lg hover:shadow-black/5 ${badge.cardBorder} cursor-pointer`}
                 onMouseEnter={() => onHover(slot)}
                 onMouseLeave={() => onLeave()}
                 onClick={() => onPick(slot)}

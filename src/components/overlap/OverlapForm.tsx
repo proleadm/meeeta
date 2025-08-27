@@ -1,10 +1,11 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { Globe, Clock, Calendar, X, Plus } from 'lucide-react';
+import { Globe, Clock, Calendar, X, Plus, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import type { City } from '@/lib/time';
-import { listCommonCities, searchCities } from '@/lib/time';
+import { listCommonCities, searchCities, searchTimezones, getLocalTimezone } from '@/lib/time';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 interface OverlapFormProps {
   selectedCities: City[];
@@ -22,6 +23,8 @@ export default function OverlapForm(props: OverlapFormProps) {
 
   const [cityQuery, setCityQuery] = useState('');
   const results = useMemo(() => searchCities(cityQuery), [cityQuery]);
+  const [tzQuery, setTzQuery] = useState('');
+  const tzResults = useMemo(() => searchTimezones(tzQuery), [tzQuery]);
 
   const addTempCity = (c: City) => {
     if (selectedCities.some((x) => x.id === c.id)) return;
@@ -129,6 +132,23 @@ export default function OverlapForm(props: OverlapFormProps) {
             >
               Tomorrow
             </Button>
+            <label className="flex-1">
+              <span className="sr-only">Custom date</span>
+              <input
+                type="date"
+                className="h-9 w-full px-2.5 rounded-xl bg-white/80 dark:bg-gray-800/80 border border-gray-200 dark:border-gray-700 hover:bg-white dark:hover:bg-gray-800 transition-colors text-sm"
+                onChange={(e) => {
+                  const v = e.target.value;
+                  if (!v) return;
+                  const parts = v.split('-');
+                  if (parts.length === 3) {
+                    const [y, m, d] = parts.map(Number);
+                    const dt = new Date(y, (m - 1), d);
+                    setDay(dt);
+                  }
+                }}
+              />
+            </label>
           </div>
         </div>
 
@@ -136,17 +156,60 @@ export default function OverlapForm(props: OverlapFormProps) {
         <div className="space-y-2">
           <div className="flex items-center gap-2">
             <Globe className="h-4 w-4 text-gray-500" />
-            <label className="text-sm font-semibold text-gray-700 dark:text-gray-300" htmlFor="sourceTZ">
+            <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">
               Source Timezone
             </label>
           </div>
-          <input
-            id="sourceTZ"
-            value={sourceTZ}
-            onChange={(e) => setSourceTZ(e.target.value)}
-            className="h-9 w-full px-3 rounded-xl bg-white/80 dark:bg-gray-800/80 border border-gray-200 dark:border-gray-700 hover:bg-white dark:hover:bg-gray-800 transition-colors focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-            placeholder="e.g., America/New_York"
-          />
+          <div className="relative">
+            <div className="flex gap-2">
+              <div className="relative flex-1">
+                <input
+                  value={tzQuery}
+                  onChange={(e) => setTzQuery(e.target.value)}
+                  placeholder="Type to search timezones (e.g., Asia/Kolkata)"
+                  className="h-9 w-full px-3 rounded-xl bg-white/80 dark:bg-gray-800/80 border border-gray-200 dark:border-gray-700 hover:bg-white dark:hover:bg-gray-800 transition-colors text-sm"
+                  aria-label="Search timezones"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && tzResults.length > 0) {
+                      setSourceTZ(tzResults[0]);
+                      setTzQuery('');
+                    }
+                  }}
+                />
+                {tzQuery && tzResults.length > 0 && (
+                  <div className="absolute left-0 right-0 top-full mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg z-50 max-h-56 overflow-y-auto">
+                    {tzResults.slice(0, 50).map((tz) => (
+                      <button
+                        key={tz}
+                        onClick={() => { setSourceTZ(tz); setTzQuery(''); }}
+                        className="w-full px-3 py-2 text-left hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 dark:hover:from-blue-900/20 dark:hover:to-indigo-900/20 transition-all duration-200 first:rounded-t-xl last:rounded-b-xl text-sm"
+                      >
+                        {tz}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+              <Select value={sourceTZ} onValueChange={(v) => setSourceTZ(v)}>
+                <SelectTrigger className="h-9 px-3 rounded-xl bg-white/80 dark:bg-gray-800/80 border border-gray-200 dark:border-gray-700 text-sm">
+                  <SelectValue placeholder="Pick timezone" />
+                </SelectTrigger>
+                <SelectContent className="max-h-72">
+                  {tzResults.slice(0, 100).map((tz) => (
+                    <SelectItem key={tz} value={tz}>{tz}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Button
+                variant="outline"
+                className="h-9 px-3 rounded-xl text-sm"
+                onClick={() => setSourceTZ(getLocalTimezone())}
+                title="Reset to your computer's timezone"
+              >
+                Use local
+              </Button>
+            </div>
+          </div>
         </div>
       </div>
     </div>
