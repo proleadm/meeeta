@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { DateTime } from 'luxon';
 import Timeline from '@/components/overlap/Timeline';
 import OverlapForm from '@/components/overlap/OverlapForm';
@@ -9,17 +9,32 @@ import BestWindowBanner from '@/components/overlap/BestWindowBanner';
 import { intersectEligible, formatSlotForCopy, type City as OverlapCity, type Slot } from '@/lib/time-overlap';
 import { usePrefs } from '@/state/usePrefs';
 import type { City } from '@/lib/time';
+import HomeTimeBar from '@/components/overlap/HomeTimeBar';
 
 export default function OverlapPage() {
   const homeTZ = usePrefs((s) => s.prefs.homeTZ);
   const trackedCities = usePrefs((s) => s.cities);
 
-  const [selectedCities, setSelectedCities] = useState<City[]>(trackedCities);
+  // Determine default selection from pinned cities (fallback to all tracked)
+  const pinnedOrTracked = useMemo(() => {
+    const pinned = trackedCities.filter((c) => c.isPinned);
+    return pinned.length > 0 ? pinned : trackedCities;
+  }, [trackedCities]);
+
+  const [selectedCities, setSelectedCities] = useState<City[]>(pinnedOrTracked);
+  const [isSyncedWithClocks, setIsSyncedWithClocks] = useState<boolean>(true);
   const [durationMins, setDurationMins] = useState<number>(30);
   const [day, setDay] = useState<'today' | 'tomorrow' | Date>('today');
   const [sourceTZ, setSourceTZ] = useState<string>(homeTZ);
   const [hoveredSlot, setHoveredSlot] = useState<Slot | null>(null);
   const [selectedTime, setSelectedTime] = useState<number | null>(null);
+  const [selectedMinuteOfDay, setSelectedMinuteOfDay] = useState<number>(DateTime.now().setZone(homeTZ).hour * 60 + DateTime.now().setZone(homeTZ).minute);
+
+  // Keep Overlap selected cities synced with Clocks (pinned first) until user adjusts locally
+  useEffect(() => {
+    if (!isSyncedWithClocks) return;
+    setSelectedCities(pinnedOrTracked);
+  }, [isSyncedWithClocks, pinnedOrTracked]);
 
   const sourceDay = useMemo(() => (
     typeof day === 'string' ? (day === 'today' ? DateTime.now() : DateTime.now().plus({ days: 1 })) : DateTime.fromJSDate(day as Date)
@@ -60,7 +75,10 @@ export default function OverlapPage() {
         {/* Controls */}
         <OverlapForm
           selectedCities={selectedCities}
-          setSelectedCities={setSelectedCities}
+          setSelectedCities={(cities) => {
+            setIsSyncedWithClocks(false);
+            setSelectedCities(cities);
+          }}
           durationMins={durationMins}
           setDurationMins={setDurationMins}
           day={day}
@@ -92,6 +110,12 @@ export default function OverlapPage() {
           }}
         />
 
+        {/* Home Time Bar - anchor at very top of visualizer */}
+        <HomeTimeBar
+          selectedMinuteOfDay={selectedMinuteOfDay}
+          onChangeMinute={setSelectedMinuteOfDay}
+        />
+
         {/* Timeline */}
         <Timeline
           cities={selectedCities}
@@ -100,8 +124,8 @@ export default function OverlapPage() {
           durationMins={durationMins}
           suggestions={suggestions}
           hoveredSlot={hoveredSlot}
-          selectedTime={selectedTime}
-          onSelectTime={setSelectedTime}
+          selectedTime={selectedMinuteOfDay}
+          onSelectTime={setSelectedMinuteOfDay}
         />
 
         {/* Suggestions */}
@@ -114,7 +138,7 @@ export default function OverlapPage() {
           onPick={(slot) => {
             const sourceTime = slot.interval.start.setZone(sourceTZ);
             const minutes = sourceTime.hour * 60 + sourceTime.minute;
-            setSelectedTime(minutes);
+            setSelectedMinuteOfDay(minutes);
           }}
           onCopy={async (slot) => {
             const overlapCities: OverlapCity[] = selectedCities.map(city => ({

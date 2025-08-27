@@ -1,10 +1,12 @@
 'use client';
 
 import type { City } from '@/lib/time';
+import { listCommonCities } from '@/lib/time';
 import type { Slot } from '@/lib/time-overlap';
 import { DateTime, Interval } from 'luxon';
 import { mapCityBusinessToSourceDay, intersectAll, sliceByDuration } from '@/lib/time-overlap';
-import { useRef, useState, useEffect } from 'react';
+import { useRef, useState, useEffect, useMemo } from 'react';
+import { usePrefs } from '@/state/usePrefs';
 
 interface TimelineProps {
   cities: City[];
@@ -23,6 +25,18 @@ export default function Timeline({ cities, day, sourceTZ, durationMins, suggesti
   const sourceDay = typeof day === 'string'
     ? (day === 'today' ? DateTime.now() : DateTime.now().plus({ days: 1 }))
     : DateTime.fromJSDate(day as Date);
+  const prefs = usePrefs((s) => s.prefs);
+  const workingHours = prefs?.workingHours ?? { start: 9, end: 17 };
+
+  // Resolve a friendly label for the anchor timezone (home/source)
+  const homeCityName = useMemo(() => {
+    const fromSelected = cities.find((c) => c.timezone === sourceTZ)?.name;
+    if (fromSelected) return fromSelected;
+    const fromCommon = listCommonCities().find((c) => c.timezone === sourceTZ)?.name;
+    if (fromCommon) return fromCommon;
+    const segment = sourceTZ.split('/').pop() || sourceTZ;
+    return segment.replace(/_/g, ' ');
+  }, [cities, sourceTZ]);
   const rowsWrapperRef = useRef<HTMLDivElement>(null);
   const [dragging, setDragging] = useState(false);
 
@@ -48,6 +62,10 @@ export default function Timeline({ cities, day, sourceTZ, durationMins, suggesti
     };
   }, []);
 
+  // Marker in source timezone
+  const markerMinutes = selectedTime ?? 0;
+  const markerSource = sourceDay.setZone(sourceTZ).startOf('day').plus({ minutes: markerMinutes });
+
   if (cities.length === 0) {
     return (
       <div className="rounded-2xl border-0 bg-gradient-to-br from-white via-white to-gray-50/30 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800/30 shadow-lg shadow-black/5 backdrop-blur-sm p-8 text-center">
@@ -67,7 +85,7 @@ export default function Timeline({ cities, day, sourceTZ, durationMins, suggesti
   return (
     <div className="space-y-6">
       {/* Legend */}
-      <div className="flex items-center justify-center gap-8 p-4 bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-800/50 dark:to-gray-700/50 rounded-2xl border border-gray-200/50 dark:border-gray-700/50">
+      <div className="flex items-center justify-center gap-6 p-3 bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-800/50 dark:to-gray-700/50 rounded-2xl border border-gray-200/50 dark:border-gray-700/50 text-sm">
         <div className="flex items-center gap-3">
           <div className="w-6 h-6 bg-gradient-to-b from-emerald-500 to-emerald-600 rounded-lg shadow-sm border border-emerald-400/20"></div>
           <div className="flex flex-col">
@@ -91,10 +109,11 @@ export default function Timeline({ cities, day, sourceTZ, durationMins, suggesti
         </div>
       </div>
 
-      <div className="rounded-2xl border-0 bg-gradient-to-br from-white via-white to-gray-50/30 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800/30 shadow-lg shadow-black/5 backdrop-blur-sm p-6 space-y-6">
+      <div className="rounded-2xl border-0 bg-gradient-to-br from-white via-white to-gray-50/30 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800/30 shadow-lg shadow-black/5 backdrop-blur-sm p-4 space-y-4">
+
         {/* Hour markers */}
-        <div className="relative mb-6">
-          <div className="h-3 rounded-full bg-gradient-to-r from-gray-200 via-gray-300 to-gray-200 dark:from-gray-700 dark:via-gray-600 dark:to-gray-700 shadow-inner" />
+        <div className="relative mb-3">
+          <div className="h-2 rounded-full bg-gradient-to-r from-gray-200 via-gray-300 to-gray-200 dark:from-gray-700 dark:via-gray-600 dark:to-gray-700 shadow-inner" />
           {/* Major hour ticks */}
           {[0, 6, 12, 18, 24].map((hour) => (
             <div
@@ -102,8 +121,8 @@ export default function Timeline({ cities, day, sourceTZ, durationMins, suggesti
               className="absolute top-0 flex flex-col items-center"
               style={{ left: `${(hour / 24) * 100}%`, transform: 'translateX(-50%)' }}
             >
-              <div className="w-1 h-6 bg-gray-600 dark:bg-gray-300 rounded-full shadow-sm" />
-              <span className="text-sm font-semibold text-gray-700 dark:text-gray-300 mt-2 px-2 py-1 bg-white/80 dark:bg-gray-800/80 rounded-md shadow-sm border border-gray-200/50 dark:border-gray-700/50">
+              <div className="w-0.5 h-5 bg-gray-600 dark:bg-gray-300 rounded-full shadow-sm" />
+              <span className="text-xs font-semibold text-gray-700 dark:text-gray-300 mt-1 px-1.5 py-0.5 bg-white/80 dark:bg-gray-800/80 rounded-md shadow-sm border border-gray-200/50 dark:border-gray-700/50">
                 {hour.toString().padStart(2, '0')}:00
               </span>
             </div>
@@ -115,7 +134,7 @@ export default function Timeline({ cities, day, sourceTZ, durationMins, suggesti
               className="absolute top-0"
               style={{ left: `${(hour / 24) * 100}%`, transform: 'translateX(-50%)' }}
             >
-              <div className="w-0.5 h-4 bg-gray-400 dark:bg-gray-500 rounded-full opacity-60" />
+              <div className="w-0.5 h-3 bg-gray-400 dark:bg-gray-500 rounded-full opacity-60" />
             </div>
           ))}
         </div>
@@ -137,18 +156,17 @@ export default function Timeline({ cities, day, sourceTZ, durationMins, suggesti
                 </div>
                 <span className="text-sm text-gray-500 dark:text-gray-400">{c.country}</span>
                 <div className="text-xs text-gray-400 dark:text-gray-500 ml-auto">
-                  {sourceDay.setZone(c.timezone).toFormat('MMM d, HH:mm')} local
+                  {markerSource.setZone(c.timezone).toFormat('MMM d, HH:mm')} local
                 </div>
               </div>
 
               {/* Timeline row - 24 segments showing local comfort levels */}
               <div className="relative bg-gray-100 dark:bg-gray-800 rounded-xl p-2">
-                <div className="flex h-16 rounded-lg overflow-hidden">
+                <div className="flex h-12 rounded-lg overflow-hidden">
                   {Array.from({ length: 24 }).map((_, hour) => {
-                    // This segment represents hour X in the source timezone
-                    const sourceHour = sourceDay.set({ hour, minute: 0 });
-                    
-                    // Convert to local time in this city
+                    // Segment represents hour X on the anchor (sourceTZ) axis
+                    const sourceHour = sourceDay.setZone(sourceTZ).startOf('day').plus({ hours: hour });
+                    // Convert to the city's local time for comfort coloring
                     const localTime = sourceHour.setZone(c.timezone);
                     const localHour = localTime.hour;
                     
@@ -182,22 +200,28 @@ export default function Timeline({ cities, day, sourceTZ, durationMins, suggesti
                         className={`flex-1 ${bgColor} ${textColor} cursor-pointer transition-all duration-200 hover:brightness-110 relative group flex items-center justify-center border-r border-white/10 last:border-r-0`}
                         title={title}
                       >
-                        {/* Hour label for major hours */}
-                        {hour % 6 === 0 && (
-                          <div className="text-xs font-bold opacity-80">
-                            {hour.toString().padStart(2, '0')}
-                          </div>
-                        )}
-                        
-                        {/* Tooltip */}
-                        <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-20">
-                          <div className="font-semibold">{sourceTimeStr} source</div>
-                          <div>{localTimeStr} in {c.name}</div>
-                          <div className="text-xs opacity-75">{label}</div>
-                        </div>
+                        {/* remove big labels for compactness */}
                       </div>
                     );
                   })}
+                </div>
+                {/* Row-level tooltip aligned to global marker */}
+                <div
+                  className="pointer-events-none absolute top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-150"
+                  style={{ left: pct(markerMinutes) }}
+                >
+                  {(() => {
+                    const localAtMarker = markerSource.setZone(c.timezone);
+                    const h = localAtMarker.hour;
+                    let band = 'Unfriendly';
+                    if (h >= 9 && h < 17) band = 'Comfortable';
+                    else if ((h >= 7 && h < 9) || (h >= 17 && h < 21)) band = 'Borderline';
+                    return (
+                      <div className="translate-x-2 px-1.5 py-0.5 text-[11px] rounded-md bg-gray-900 text-white dark:bg-gray-100 dark:text-gray-900 shadow whitespace-nowrap">
+                        {localAtMarker.toFormat('HH:mm')} • {band}
+                      </div>
+                    );
+                  })()}
                 </div>
               </div>
             </div>
