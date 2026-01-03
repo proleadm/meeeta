@@ -18,16 +18,23 @@ interface ConvertFormProps {
 export default function ConvertForm({ defaultInput = '', defaultSourceTZ, onConvert, error }: ConvertFormProps) {
   const homeTZ = usePrefs((s) => s.prefs.homeTZ);
   const formatPref = usePrefs((s) => s.prefs.format);
-  const [sourceTZ, setSourceTZ] = useState(defaultSourceTZ || homeTZ);
+  // Establish initial timezone up-front so initial state derives from it
+  const initialTZ = defaultSourceTZ || homeTZ;
+  const [sourceTZ, setSourceTZ] = useState(initialTZ);
   // unified minute-of-day scrubber (0..1439)
   const [minuteOfDay, setMinuteOfDay] = useState<number>(() => {
-    const now = DateTime.now();
+    const now = DateTime.now().setZone(initialTZ);
     return now.hour * 60 + now.minute;
   });
-  const [date, setDate] = useState<DateTime>(DateTime.now());
+  // Keep the selected calendar date anchored in the source timezone
+  const [date, setDate] = useState<DateTime>(DateTime.now().setZone(initialTZ));
 
   useEffect(() => {
-    if (defaultSourceTZ) setSourceTZ(defaultSourceTZ);
+    if (defaultSourceTZ) {
+      setSourceTZ(defaultSourceTZ);
+      // Rebase the selected calendar date into the new source timezone
+      setDate(DateTime.now().setZone(defaultSourceTZ));
+    }
   }, [defaultSourceTZ]);
 
   const tzOptions = useMemo(() => {
@@ -73,7 +80,11 @@ export default function ConvertForm({ defaultInput = '', defaultSourceTZ, onConv
     if (e) e.preventDefault();
     const h = Math.floor(minuteOfDay / 60);
     const m = minuteOfDay % 60;
-    const dt = date.set({ hour: h, minute: m }).setZone(sourceTZ);
+    // Build a DateTime interpreted IN the source timezone (not local -> converted)
+    const dt = DateTime.fromObject(
+      { year: date.year, month: date.month, day: date.day, hour: h, minute: m },
+      { zone: sourceTZ }
+    );
     const timeString = minutesToString(minuteOfDay, formatPref === '12h');
     onConvert({ input: timeString, sourceTZ, dt });
   };
@@ -89,11 +100,27 @@ export default function ConvertForm({ defaultInput = '', defaultSourceTZ, onConv
   useEffect(() => {
     const h = Math.floor(minuteOfDay / 60);
     const m = minuteOfDay % 60;
-    const dt = date.set({ hour: h, minute: m }).setZone(sourceTZ);
+    // Interpret the selected wall time in the current source timezone
+    const dt = DateTime.fromObject(
+      { year: date.year, month: date.month, day: date.day, hour: h, minute: m },
+      { zone: sourceTZ }
+    );
     const timeString = minutesToString(minuteOfDay, formatPref === '12h');
     onConvert({ input: timeString, sourceTZ, dt });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [minuteOfDay, date, sourceTZ]);
+
+  // When the source timezone changes, re-anchor the selected calendar day
+  // to the same Y-M-D in the new timezone (preserves user's chosen date).
+  useEffect(() => {
+    setDate((prev) =>
+      DateTime.fromObject(
+        { year: prev.year, month: prev.month, day: prev.day },
+        { zone: sourceTZ }
+      )
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sourceTZ]);
 
   return (
     <div className="sticky top-2 z-10 rounded-2xl border-0 bg-gradient-to-br from-white via-white to-gray-50/30 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800/30 shadow-lg shadow-black/5 backdrop-blur-sm p-3 md:p-4 lg:p-5">
@@ -230,7 +257,7 @@ export default function ConvertForm({ defaultInput = '', defaultSourceTZ, onConv
 
         {/* Clock-Face Style Scrubber */}
         <div className="space-y-6 md:space-y-8">
-          <div className="relative pb-6">
+          <div className="relative pb-12">
             {/* Hour tick marks */}
             <div className="absolute inset-x-0 top-1 h-2 pointer-events-none">
               {Array.from({ length: 25 }, (_, i) => {
@@ -268,7 +295,7 @@ export default function ConvertForm({ defaultInput = '', defaultSourceTZ, onConv
             
             {/* Time tooltip above thumb */}
             <div 
-              className="absolute -top-10 transform -translate-x-1/2 -translate-y-1 text-xs font-semibold bg-primary text-primary-foreground px-2 py-1 rounded shadow-sm ring-2 ring-primary/40 focus:ring-primary/60 transition-all duration-200 z-20 hidden sm:block"
+              className="absolute top-full transform -translate-x-1/2 translate-y-2 text-xs font-semibold bg-primary text-primary-foreground px-2 py-1 rounded shadow-sm ring-2 ring-primary/40 focus:ring-primary/60 transition-all duration-200 z-20 hidden sm:block"
               style={{ left: `${(minuteOfDay / 1439) * 100}%` }}
             >
               {minutesToString(minuteOfDay, formatPref === '12h')}
