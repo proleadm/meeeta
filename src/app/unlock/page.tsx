@@ -28,7 +28,6 @@ export default function UnlockPage({ searchParams }: UnlockPageProps) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ password, next: nextPath }),
-        redirect: 'manual',
       });
 
       if (res.status === 401) {
@@ -38,14 +37,9 @@ export default function UnlockPage({ searchParams }: UnlockPageProps) {
         return;
       }
 
-      if (res.status >= 300 && res.status < 400) {
-        const location = res.headers.get('Location') || nextPath;
-        window.location.assign(location);
-        return;
-      }
-
       if (res.ok) {
-        window.location.assign(nextPath);
+        const target = res.redirected ? res.url : nextPath;
+        window.location.assign(target);
         return;
       }
 
