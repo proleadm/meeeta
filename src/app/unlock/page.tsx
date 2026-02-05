@@ -1,3 +1,7 @@
+'use client';
+
+import { useState } from 'react';
+
 interface UnlockPageProps {
   searchParams?: {
     next?: string;
@@ -7,7 +11,51 @@ interface UnlockPageProps {
 
 export default function UnlockPage({ searchParams }: UnlockPageProps) {
   const nextPath = searchParams?.next || '/';
-  const hasError = searchParams?.error === '1';
+  const initialError = searchParams?.error === '1';
+  const [error, setError] = useState(initialError ? 'Incorrect password. Please try again.' : '');
+  const [loading, setLoading] = useState(false);
+
+  const onSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setError('');
+    setLoading(true);
+
+    const formData = new FormData(event.currentTarget);
+    const password = String(formData.get('password') || '');
+
+    try {
+      const res = await fetch('/api/unlock', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password, next: nextPath }),
+        redirect: 'manual',
+      });
+
+      if (res.status === 401) {
+        const data = await res.json().catch(() => null);
+        setError(data?.error || 'Incorrect password. Please try again.');
+        setLoading(false);
+        return;
+      }
+
+      if (res.status >= 300 && res.status < 400) {
+        const location = res.headers.get('Location') || nextPath;
+        window.location.assign(location);
+        return;
+      }
+
+      if (res.ok) {
+        window.location.assign(nextPath);
+        return;
+      }
+
+      setError('Something went wrong. Please try again.');
+    } catch {
+      setError('Something went wrong. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background to-muted/10 px-4">
@@ -19,14 +67,13 @@ export default function UnlockPage({ searchParams }: UnlockPageProps) {
           </p>
         </div>
 
-        {hasError && (
+        {error && (
           <div className="text-sm text-red-600 dark:text-red-400 bg-red-50/80 dark:bg-red-900/30 border border-red-200/60 dark:border-red-800/40 rounded-lg px-3 py-2">
-            Incorrect password. Please try again.
+            {error}
           </div>
         )}
 
-        <form className="space-y-3" method="POST" action="/api/unlock">
-          <input type="hidden" name="next" value={nextPath} />
+        <form className="space-y-3" onSubmit={onSubmit}>
           <div className="space-y-1">
             <label htmlFor="password" className="text-sm font-medium text-gray-700 dark:text-gray-300">
               Password
@@ -43,9 +90,10 @@ export default function UnlockPage({ searchParams }: UnlockPageProps) {
 
           <button
             type="submit"
-            className="w-full h-10 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-semibold transition-colors"
+            className="w-full h-10 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-semibold transition-colors disabled:opacity-70 disabled:cursor-not-allowed"
+            disabled={loading}
           >
-            Unlock
+            {loading ? 'Unlocking...' : 'Unlock'}
           </button>
         </form>
       </div>

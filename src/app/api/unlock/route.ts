@@ -5,28 +5,42 @@ const COOKIE_MAX_AGE = 60 * 60 * 24 * 7; // 7 days
 
 function getSafeNext(next: string | null) {
   if (!next) return '/';
-  if (!next.startsWith('/')) return '/';
+  if (!next.startsWith('/') || next.startsWith('//')) return '/';
   return next;
 }
 
+async function readBody(req: NextRequest) {
+  const contentType = req.headers.get('content-type') || '';
+  if (contentType.includes('application/json')) {
+    try {
+      return await req.json();
+    } catch {
+      return {};
+    }
+  }
+  try {
+    const form = await req.formData();
+    return Object.fromEntries(form.entries());
+  } catch {
+    return {};
+  }
+}
+
 export async function POST(req: NextRequest) {
-  const form = await req.formData();
-  const password = String(form.get('password') || '');
-  const next = getSafeNext(String(form.get('next') || ''));
+  const body = await readBody(req);
+  const password = String(body.password || '');
+  const next = getSafeNext(String(body.next || ''));
 
   const expected = process.env.MEETETA_PASSWORD;
   if (!expected) {
-    return NextResponse.redirect(new URL(next, req.url));
+    return NextResponse.redirect(new URL(next, req.url), 303);
   }
 
   if (password !== expected) {
-    const errorUrl = new URL('/unlock', req.url);
-    errorUrl.searchParams.set('error', '1');
-    errorUrl.searchParams.set('next', next);
-    return NextResponse.redirect(errorUrl);
+    return NextResponse.json({ error: 'Invalid password' }, { status: 401 });
   }
 
-  const res = NextResponse.redirect(new URL(next, req.url));
+  const res = NextResponse.redirect(new URL(next, req.url), 303);
   res.cookies.set({
     name: AUTH_COOKIE,
     value: '1',
