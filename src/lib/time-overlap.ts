@@ -60,8 +60,11 @@ export function sliceByDuration(intervals: Interval[], minutes: number, stepMinu
   const dur = Duration.fromObject({ minutes });
   const step = Duration.fromObject({ minutes: stepMinutes });
   for (const iv of intervals) {
-    let cursor = iv.start;
-    while (cursor.plus(dur) <= iv.end) {
+    const start = iv.start;
+    const end = iv.end;
+    if (!start || !end) continue;
+    let cursor = start;
+    while (cursor.plus(dur) <= end) {
       const next = cursor.plus(dur);
       result.push(Interval.fromDateTimes(cursor, next));
       cursor = cursor.plus(step);
@@ -82,12 +85,15 @@ export function buildShoulderWindows(opts: BuildOpts): Interval[] {
 }
 
 export function scoreSlot(slot: Interval, cities: { timezone: string }[]): number {
+  const start = slot.start;
+  const end = slot.end;
+  if (!start || !end) return 0;
   let score = 0;
   for (const c of cities) {
-    const day = slot.start.setZone(c.timezone).startOf('day');
+    const day = start.setZone(c.timezone).startOf('day');
     const biz = buildBusinessWindow({ date: day, tz: c.timezone });
     const shoulders = buildShoulderWindows({ date: day, tz: c.timezone });
-    const sBiz = slot.set({ start: slot.start.setZone(c.timezone), end: slot.end.setZone(c.timezone) });
+    const sBiz = slot.set({ start: start.setZone(c.timezone), end: end.setZone(c.timezone) });
     if (sBiz.intersection(biz)) {
       score += 2; // comfortable
       continue;
@@ -106,12 +112,15 @@ export function formatSlot(
   cities: { name: string; timezone: string }[],
   sourceTZ: string
 ): { label: string; lines: { city: string; local: string }[] } {
-  const srcStart = slot.start.setZone(sourceTZ);
-  const srcEnd = slot.end.setZone(sourceTZ);
+  const start = slot.start;
+  const end = slot.end;
+  if (!start || !end) return { label: '', lines: [] };
+  const srcStart = start.setZone(sourceTZ);
+  const srcEnd = end.setZone(sourceTZ);
   const label = `${srcStart.toFormat('EEE, MMM d • HH:mm')}–${srcEnd.toFormat('HH:mm')} (${sourceTZ})`;
   const lines = cities.map((c) => {
-    const localStart = slot.start.setZone(c.timezone);
-    const localEnd = slot.end.setZone(c.timezone);
+    const localStart = start.setZone(c.timezone);
+    const localEnd = end.setZone(c.timezone);
     const abbrev = getTimezoneAbbreviation(c.timezone);
     const local = `${localStart.toFormat('HH:mm')}–${localEnd.toFormat('HH:mm')} ${abbrev}`;
     return { city: c.name, local };
@@ -133,6 +142,7 @@ export function mapCityBusinessToSourceDay(
 
   // Same span in city local time
   const citySpan = Interval.fromDateTimes(srcStart.setZone(cityTz), srcEnd.setZone(cityTz));
+  if (!citySpan.start || !citySpan.end) return [];
 
   // Build business windows for both relevant local dates (start day and possibly end day if different)
   const d1 = citySpan.start.startOf('day');
@@ -149,8 +159,11 @@ export function mapCityBusinessToSourceDay(
   // Map windows back to sourceTZ and clamp to source day span
   const mapped: Interval[] = [];
   for (const w of windows) {
-    const s = w.start.setZone(sourceTZ);
-    const e = w.end.setZone(sourceTZ);
+    const wStart = w.start;
+    const wEnd = w.end;
+    if (!wStart || !wEnd) continue;
+    const s = wStart.setZone(sourceTZ);
+    const e = wEnd.setZone(sourceTZ);
     const iv = Interval.fromDateTimes(s, e).intersection(srcSpan);
     if (iv && iv.isValid && iv.length('minutes') > 0) mapped.push(iv);
   }
@@ -165,16 +178,21 @@ export function getWindowsForCity(day: DateTime, tz: string): {
 } {
   const comfortable = buildBusinessWindow({ date: day, tz, start: '09:00', end: '17:00' });
   const shoulders = buildShoulderWindows({ date: day, tz });
+  if (!comfortable.start || !comfortable.end) {
+    return { comfortable: [], borderline: [], unfriendly: [{ start: 0, end: 1440 }] };
+  }
   
   const comfortableRanges: Range[] = [{
     start: toMinutesOfDay(comfortable.start),
     end: toMinutesOfDay(comfortable.end)
   }];
   
-  const borderlineRanges: Range[] = shoulders.map(iv => ({
-    start: toMinutesOfDay(iv.start),
-    end: toMinutesOfDay(iv.end)
-  }));
+  const borderlineRanges: Range[] = shoulders
+    .filter((iv) => iv.start && iv.end)
+    .map(iv => ({
+      start: toMinutesOfDay(iv.start as DateTime),
+      end: toMinutesOfDay(iv.end as DateTime)
+    }));
   
   // Unfriendly = everything else (0-420, 1260-1440 typically)
   const unfriendlyRanges: Range[] = [];
@@ -220,13 +238,16 @@ export function intersectEligible(
   const slots = sliceByDuration(overlaps, durationMin, stepMin);
   
   // Score and format each slot
-  const scoredSlots: Slot[] = slots.map(slot => {
+  const scoredSlots: Slot[] = slots.flatMap(slot => {
+    const start = slot.start;
+    const end = slot.end;
+    if (!start || !end) return [];
     let totalScore = 100; // Base score
     let minQuality: 'comfortable' | 'borderline' | 'unfriendly' = 'comfortable';
     
     const perCity = cities.map(city => {
-      const localStart = slot.start.setZone(city.timezone);
-      const localEnd = slot.end.setZone(city.timezone);
+      const localStart = start.setZone(city.timezone);
+      const localEnd = end.setZone(city.timezone);
       const localHour = localStart.hour;
       
       let band: 'comfortable' | 'borderline' | 'unfriendly';
@@ -261,14 +282,14 @@ export function intersectEligible(
       };
     });
     
-    return {
-      startMinute: toMinutesOfDay(slot.start.setZone(sourceTZ)),
-      endMinute: toMinutesOfDay(slot.end.setZone(sourceTZ)),
+    return [{
+      startMinute: toMinutesOfDay(start.setZone(sourceTZ)),
+      endMinute: toMinutesOfDay(end.setZone(sourceTZ)),
       quality: minQuality,
       perCity,
       score: Math.round(totalScore / cities.length), // Normalize by city count
       interval: slot
-    };
+    }];
   });
   
   // Sort by score desc, then start time asc
@@ -278,11 +299,14 @@ export function intersectEligible(
 }
 
 export function formatSlotForCopy(slot: Slot, cities: City[], sourceTZ: string): string {
-  const sourceStart = slot.interval.start.setZone(sourceTZ);
-  const sourceEnd = slot.interval.end.setZone(sourceTZ);
+  const sourceStart = slot.interval.start;
+  const sourceEnd = slot.interval.end;
+  if (!sourceStart || !sourceEnd) return '';
+  const sourceStartTz = sourceStart.setZone(sourceTZ);
+  const sourceEndTz = sourceEnd.setZone(sourceTZ);
   
   const lines = [
-    `${sourceStart.toFormat('EEE, MMM d • HH:mm')}–${sourceEnd.toFormat('HH:mm')} (${sourceTZ})`
+    `${sourceStartTz.toFormat('EEE, MMM d • HH:mm')}–${sourceEndTz.toFormat('HH:mm')} (${sourceTZ})`
   ];
   
   for (const cityData of slot.perCity) {

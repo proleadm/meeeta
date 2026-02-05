@@ -12,6 +12,9 @@ interface BestWindowBannerProps {
 
 export default function BestWindowBanner({ slot, cities, sourceTZ, onCopy }: BestWindowBannerProps) {
   if (!slot) return null;
+  const start = slot.interval?.start;
+  const end = slot.interval?.end;
+  if (!start || !end) return null;
   
   const quality = slot.quality === 'comfortable' ? 'Comfortable' : 
                   slot.quality === 'borderline' ? 'Borderline' : 'Unfriendly';
@@ -62,7 +65,7 @@ export default function BestWindowBanner({ slot, cities, sourceTZ, onCopy }: Bes
           </div>
           
           <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-2">
-            {slot.interval.start.setZone(sourceTZ).toFormat('EEE, MMM d • HH:mm')}–{slot.interval.end.setZone(sourceTZ).toFormat('HH:mm')} ({sourceTZ})
+            {start.setZone(sourceTZ).toFormat('EEE, MMM d • HH:mm')}–{end.setZone(sourceTZ).toFormat('HH:mm')} ({sourceTZ})
           </h3>
           
           <div className="flex flex-wrap gap-2">

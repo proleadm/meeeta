@@ -67,6 +67,9 @@ export default function Suggestions({ suggestions, cities, sourceTZ, onHover, on
         <div className="space-y-4">
           {suggestions.map((slot, idx) => {
             const badge = getComfortBadge(slot.quality);
+            const start = slot.interval?.start;
+            const end = slot.interval?.end;
+            if (!start || !end) return null;
             const containsMarker =
               typeof selectedMinuteOfDay === 'number' &&
               selectedMinuteOfDay >= slot.startMinute &&
@@ -84,7 +87,7 @@ export default function Suggestions({ suggestions, cities, sourceTZ, onHover, on
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-2">
                       <h3 className="font-semibold text-gray-900 dark:text-gray-100 text-lg">
-                        {slot.interval.start.setZone(sourceTZ).toFormat('EEE, MMM d • HH:mm')}–{slot.interval.end.setZone(sourceTZ).toFormat('HH:mm')}
+                        {start.setZone(sourceTZ).toFormat('EEE, MMM d • HH:mm')}–{end.setZone(sourceTZ).toFormat('HH:mm')}
                       </h3>
                       <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${badge.class}`}>
                         {badge.label}

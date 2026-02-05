@@ -159,7 +159,9 @@ export default function OverlapPage() {
           onHover={setHoveredSlot}
           onLeave={() => setHoveredSlot(null)}
           onPick={(slot) => {
-            const sourceTime = slot.interval.start.setZone(sourceTZ);
+            const start = slot.interval?.start;
+            if (!start) return;
+            const sourceTime = start.setZone(sourceTZ);
             const minutes = sourceTime.hour * 60 + sourceTime.minute;
             setSelectedMinuteOfDay(minutes);
           }}
