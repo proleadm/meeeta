@@ -15,19 +15,33 @@ function isPublicPath(pathname: string) {
 
 export function middleware(req: NextRequest) {
   const password = process.env.MEETETA_PASSWORD;
-  if (!password) return NextResponse.next();
+  if (!password) {
+    const res = NextResponse.next();
+    res.headers.set('x-meeteta-mw', '1');
+    return res;
+  }
 
   const { pathname, search } = req.nextUrl;
-  if (isPublicPath(pathname)) return NextResponse.next();
+  if (isPublicPath(pathname)) {
+    const res = NextResponse.next();
+    res.headers.set('x-meeteta-mw', '1');
+    return res;
+  }
 
   const authed = req.cookies.get(AUTH_COOKIE)?.value === '1';
-  if (authed) return NextResponse.next();
+  if (authed) {
+    const res = NextResponse.next();
+    res.headers.set('x-meeteta-mw', '1');
+    return res;
+  }
 
   const next = `${pathname}${search}`;
   const redirectUrl = req.nextUrl.clone();
   redirectUrl.pathname = UNLOCK_PATH;
   redirectUrl.search = `?next=${encodeURIComponent(next)}`;
-  return NextResponse.redirect(redirectUrl);
+  const res = NextResponse.redirect(redirectUrl);
+  res.headers.set('x-meeteta-mw', '1');
+  return res;
 }
 
 export const config = {
