@@ -10,8 +10,7 @@ function isPublicPath(pathname: string) {
   if (pathname === '/favicon.ico') return true;
   if (pathname === '/robots.txt') return true;
   if (pathname === '/sitemap.xml') return true;
-  // treat any file with an extension as a static asset
-  return /\.[a-zA-Z0-9]+$/.test(pathname);
+  return /\.(png|jpe?g|gif|svg|ico|webp|css|js|map|txt)$/i.test(pathname);
 }
 
 export function middleware(req: NextRequest) {
