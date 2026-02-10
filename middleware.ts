@@ -10,24 +10,19 @@ function isPublicPath(pathname: string) {
   if (pathname === '/favicon.ico') return true;
   if (pathname === '/robots.txt') return true;
   if (pathname === '/sitemap.xml') return true;
-  return /\.(png|jpe?g|gif|svg|ico|webp|css|js|map|txt)$/i.test(pathname);
+  // treat any file with an extension as a static asset
+  return /\.[a-zA-Z0-9]+$/.test(pathname);
 }
 
 export function middleware(req: NextRequest) {
   const password = process.env.MEETETA_PASSWORD;
-  if (!password) {
-    return NextResponse.next();
-  }
+  if (!password) return NextResponse.next();
 
   const { pathname, search } = req.nextUrl;
-  if (isPublicPath(pathname)) {
-    return NextResponse.next();
-  }
+  if (isPublicPath(pathname)) return NextResponse.next();
 
   const authed = req.cookies.get(AUTH_COOKIE)?.value === '1';
-  if (authed) {
-    return NextResponse.next();
-  }
+  if (authed) return NextResponse.next();
 
   const next = `${pathname}${search}`;
   const redirectUrl = req.nextUrl.clone();
